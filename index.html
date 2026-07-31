@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Speed Games - Telegram Mini App</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Socket.io Client SDK -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-dark: #0a0b0d;
+            --bg-panel: #16181f;
+            --bg-card: #1f222b;
+            --text-white: #ffffff;
+            --text-secondary: #7e8494;
+            --brand-crimson: #d32323;
+            --brand-crimson-hover: #f12c2c;
+            --accent-green: #3ca852;
+            --accent-gold: #ffb703;
+            --border-subtle: #272b36;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #030304;
+            color: var(--text-white);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .phone-viewport-container {
+            width: 100%;
+            max-width: 430px;
+            background-color: var(--bg-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            overflow-x: hidden;
+        }
+
+        .view-panel {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            padding-bottom: 40px;
+        }
+        .view-panel.active-view {
+            display: flex;
+        }
+
+        .native-system-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background-color: #0d0f14;
+            font-size: 15px;
+            font-weight: 500;
+            border-bottom: 1px solid #14171f;
+        }
+        .native-title-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .main-app-nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .logo-mark {
+            background-color: var(--brand-crimson);
+            color: white;
+            font-size: 22px;
+            font-weight: 900;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .header-center-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .analytics-icon-btn {
+            background: #252836;
+            border: none;
+            padding: 8px 10px;
+            border-radius: 6px;
+            color: var(--brand-crimson);
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .balance-obscure-pill {
+            background-color: #11131a;
+            border: 1px solid var(--border-subtle);
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #d1d4dc;
+            cursor: pointer;
+        }
+        .header-right-triggers {
+            display: flex;
+            gap: 8px;
+        }
+        .action-square-btn {
+            background-color: var(--brand-crimson);
+            color: white;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .action-square-btn.profile-trigger {
+            background-color: #2c1a1f;
+            color: var(--brand-crimson);
+            border: 1px solid rgba(211, 35, 35, 0.2);
+        }
+
+        .coupon-redemption-banner {
+            background: linear-gradient(135deg, #cc1f1f 0%, #991414 100%);
+            margin: 14px;
+            padding: 16px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .coupon-text-block h3 { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+        .coupon-text-block p { font-size: 12px; color: rgba(255, 255, 255, 0.75); }
+        
+        .financial-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 0 14px 14px 14px;
+        }
+        .fin-action-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .fin-action-card span.icon { font-size: 20px; }
+        .fin-action-card span.label { font-size: 12px; font-weight: 700; color: var(--text-white); }
+
+        .catalog-section-label {
+            padding: 4px 14px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--brand-crimson);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .catalog-section-desc { padding: 0 14px 14px 14px; font-size: 12px; color: var(--text-secondary); }
+        
+        .game-showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 0 14px;
+        }
+        .game-item-card {
+            background-color: var(--bg-card);
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 0.73;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+        }
+        .game-item-card .card-thumbnail {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+        .game-item-card .badge-star {
+            position: absolute;
+            top: 6px; left: 6px;
+            background-color: #d32323;
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; z-index: 2;
+        }
+        .game-item-card .badge-secure {
+            position: absolute;
+            top: 6px; right: 6px;
+            background-color: rgba(60, 168, 82, 0.9);
+            width: 16px; height: 16px;
+            border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 9px; z-index: 2;
+        }
+        .game-item-card .card-metadata-shade {
+            background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 70%, transparent 100%);
+            padding: 8px 4px;
+            text-align: center;
+            z-index: 1;
+        }
+        .game-item-card .title-label { font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .game-item-card .studio-label { font-size: 8px; color: var(--text-secondary); margin-top: 2px; }
+
+        .identity-strip-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px;
+            background-color: var(--bg-panel);
+            margin-bottom: 1px;
+        }
+        .identity-profile-info { display: flex; align-items: center; gap: 12px; }
+        .identity-avatar-box { background-color: var(--brand-crimson); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .identity-meta h4 { font-size: 15px; font-weight: 700; }
+        .identity-meta p { font-size: 12px; color: var(--text-secondary); }
+        .navigation-control-rack { display: flex; gap: 8px; }
+        .nav-rack-btn {
+            background-color: #20232c; border: 1px solid var(--border-subtle); color: var(--text-white);
+            width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+
+        .deposit-flow-wrapper { padding: 24px 14px; }
+        .deposit-heading-group h2 { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .deposit-heading-group p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; margin-bottom: 24px; }
+        
+        .form-input-control {
+            width: 100%;
+            background-color: #11131a;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 16px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 16px;
+            outline: none;
+            appearance: none;
+        }
+        select.form-input-control {
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%237e8494'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+        }
+        .action-submit-row-btn {
+            width: 100%; background-color: var(--brand-crimson); border: none; color: white;
+            padding: 16px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 8px;
+        }
+
+        .toast-success-banner {
+            display: none;
+            background-color: #ffffff;
+            color: #0a0b0d;
+            margin: 14px;
+            padding: 14px 16px;
+            border-radius: 8px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .toast-left { display: flex; align-items: center; gap: 12px; }
+        .toast-check-circle { background-color: #3ca852; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .toast-text h5 { font-size: 14px; font-weight: 700; }
+        .toast-text p { font-size: 11px; color: #5f6676; }
+        .toast-dismiss { cursor: pointer; font-size: 16px; color: #9da4b4; }
+
+        .structured-info-list { margin-bottom: 20px; }
+        .structured-data-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 0; border-bottom: 1px solid #14161f; font-size: 14px;
+        }
+        .structured-data-row .field-key { color: var(--text-secondary); }
+        .structured-data-row .field-val { font-weight: 600; text-align: right; }
+
+        .dialogue-backdrop-shield {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            z-index: 100;
+            display: none;
+            padding: 20px 14px;
+            justify-content: center;
+            align-items: center;
+        }
+        .dialogue-backdrop-shield.active-overlay { display: flex; }
+
+        .instructional-dialogue-card {
+            background-color: #151922;
+            border: 1px solid #232c3d;
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .instructional-dialogue-card h4 { color: #f23d3d; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+        .instructional-dialogue-card p { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+        
+        .copy-pill-element {
+            display: flex; align-items: center; gap: 10px; background-color: #0c0f14;
+            padding: 12px; border-radius: 6px; margin: 14px 0; border: 1px dashed rgba(255,255,255,0.1);
+            font-weight: 700; width: max-content; cursor: pointer;
+        }
+
+        .collapsed-tutorial-trigger {
+            display: none; width: 100%; background-color: #1c1517; border: 1px solid #2e1d21;
+            padding: 14px; text-align: center; color: #ee3f3f; font-weight: 600; font-size: 13px;
+            border-radius: 6px; cursor: pointer; margin-bottom: 16px;
+        }
+
+        .phone-input-field-wrapper {
+            display: none; align-items: center; justify-content: space-between;
+            background-color: #11131a; border: 1px solid var(--border-subtle);
+            padding: 14px; border-radius: 8px; margin-bottom: 16px;
+        }
+        .phone-input-field-wrapper span { font-weight: 700; font-size: 15px; }
+        .square-copy-btn { background-color: #272b36; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+        .sms-entry-box {
+            width: 100%; height: 110px; background-color: #0d0f14; border: 1px solid var(--border-subtle);
+            border-radius: 8px; padding: 14px; color: var(--text-white); font-size: 14px; resize: none; margin-bottom: 24px; outline: none;
+        }
+
+        .footer-action-row { display: flex; gap: 12px; }
+        .footer-btn-outline {
+            flex: 1; background: transparent; border: 1px solid #3d1f24; color: var(--brand-crimson);
+            padding: 14px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; text-align: center;
+        }
+        .footer-btn-solid {
+            flex: 2; background-color: var(--brand-crimson); border: none; color: white;
+            padding: 14px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; text-align: center;
+        }
+
+        .history-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .history-item-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-item-left h5 { font-size: 14px; font-weight: 700; text-transform: uppercase; }
+        .history-item-left p { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        .history-item-right { text-align: right; }
+        .history-item-right .amt { font-size: 14px; font-weight: bold; }
+        .history-item-right .status { font-size: 10px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+        .status.pending { background: rgba(255, 183, 3, 0.2); color: var(--accent-gold); }
+        .status.success { background: rgba(60, 168, 82, 0.2); color: var(--accent-green); }
+    </style>
+</head>
+<body>
+
+<div class="phone-viewport-container">
+
+    <div class="native-system-header">
+        <div class="native-title-group" onclick="switchPanel('home')">
+            <span>✕</span>
+            <span style="margin-left: 10px; color: #fff; font-weight:700;">Speed Games</span>
+            <span style="font-size: 10px; color: var(--text-secondary); margin-left:4px;">▼</span>
+        </div>
+        <div style="cursor:pointer;" onclick="requestBalanceSync()">⋮</div>
+    </div>
+
+    <div class="main-app-nav-bar">
+        <div class="logo-mark" onclick="switchPanel('home')">S</div>
+        <div class="header-center-actions">
+            <button class="analytics-icon-btn" onclick="alert('Analytics: 100% Provably Fair Platform')">📊</button>
+            <div class="balance-obscure-pill" onclick="switchPanel('deposit-confirm')">
+                <span onclick="event.stopPropagation(); requestBalanceSync();">↻</span>
+                <span id="header-balance-val">0.00 ETB</span>
+                <span id="balance-eye" style="opacity: 0.6;" onclick="event.stopPropagation(); toggleBalanceObscure();">👁</span>
+            </div>
+        </div>
+        <div class="header-right-triggers">
+            <button class="action-square-btn" onclick="handlePlusNavigation()">+</button>
+            <button class="action-square-btn profile-trigger" onclick="alert(`User: ${currentUser.name}\nID: ${currentUser.id}`)">👥</button>
+        </div>
+    </div>
+
+    <!-- VIEW 1: HOME -->
+    <div id="view-home" class="view-panel active-view">
+        <div class="coupon-redemption-banner" onclick="openCouponModal()">
+            <div class="coupon-text-block">
+                <h3>Have a Coupon?</h3>
+                <p>Tap to redeem your promo code</p>
+            </div>
+            <span style="font-size: 18px; font-weight: bold;">➔</span>
+        </div>
+
+        <div class="financial-actions-grid">
+            <div class="fin-action-card" onclick="switchPanel('deposit-form')">
+                <span class="icon">📥</span>
+                <span class="label">Deposit</span>
+            </div>
+            <div class="fin-action-card" onclick="switchPanel('withdraw-form')">
+                <span class="icon">📤</span>
+                <span class="label">Withdraw</span>
+            </div>
+            <div class="fin-action-card" onclick="openHistoryPanel()">
+                <span class="icon">📜</span>
+                <span class="label">History</span>
+            </div>
+        </div>
+
+        <div class="catalog-section-label">🎮 Featured Games</div>
+        <div class="catalog-section-desc">Explore our handpicked selection of top-rated games.</div>
+
+        <div class="game-showcase-grid">
+            <div class="game-item-card" onclick="alert('Aviator is unlocking in next update!')">
+                <div class="badge-star">★</div>
+                <div class="card-thumbnail" style="background-image: linear-gradient(to top, #000 0%, transparent 60%), url('https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=150&auto=format&fit=crop&q=60');"></div>
+                <div class="card-metadata-shade"><div class="title-label" style="color: #ff3b30;">Aviator</div><div class="studio-label">SPRIBE</div></div>
+            </div>
+            <div class="game-item-card" onclick="launchGame('keno.html')">
+                <div class="badge-star">★</div><div class="badge-secure">✔</div>
+                <div class="card-thumbnail" style="background-image: linear-gradient(to top, #000 0%, transparent 60%), url('https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=150&auto=format&fit=crop&q=60');"></div>
+                <div class="card-metadata-shade"><div class="title-label" style="color: var(--accent-green);">Fast Keno</div><div class="studio-label">INOUT</div></div>
+            </div>
+            <div class="game-item-card" onclick="alert('Chicken Road 2 is unlocking in next update!')">
+                <div class="badge-star">★</div>
+                <div class="card-thumbnail" style="background-image: linear-gradient(to top, #000 0%, transparent 60%), url('https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=150&auto=format&fit=crop&q=60');"></div>
+                <div class="card-metadata-shade"><div class="title-label">Chicken Road 2</div><div class="studio-label">INOUT</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 2: DEPOSIT FORM -->
+    <div id="view-deposit-form" class="view-panel">
+        <div class="identity-strip-panel">
+            <div class="identity-profile-info">
+                <div class="identity-avatar-box">💼</div>
+                <div class="identity-meta">
+                    <h4 id="user-display-name">User</h4>
+                    <p id="user-display-phone">+251900000000</p>
+                </div>
+            </div>
+            <div class="navigation-control-rack">
+                <button class="nav-rack-btn" onclick="switchPanel('home')">←</button>
+                <button class="nav-rack-btn" onclick="switchPanel('home')">🏠</button>
+            </div>
+        </div>
+
+        <div class="deposit-flow-wrapper">
+            <div class="deposit-heading-group">
+                <h2>💸 Deposit</h2>
+                <p>Recharge and enjoy your favorite games</p>
+            </div>
+
+            <select class="form-input-control" id="deposit-gateway-select">
+                <option value="telebirr">Telebirr</option>
+            </select>
+
+            <input type="number" id="user-amount-field" class="form-input-control" value="200" placeholder="Enter amount (ETB)">
+
+            <button class="action-submit-row-btn" onclick="commitFormAndOrder()">Continue</button>
+        </div>
+    </div>
+
+    <!-- VIEW 2.5: WITHDRAW FORM -->
+    <div id="view-withdraw-form" class="view-panel">
+        <div class="identity-strip-panel">
+            <div class="identity-profile-info">
+                <div class="identity-avatar-box">💼</div>
+                <div class="identity-meta">
+                    <h4 class="sync-name">User</h4>
+                    <p class="sync-phone">+251900000000</p>
+                </div>
+            </div>
+            <div class="navigation-control-rack">
+                <button class="nav-rack-btn" onclick="switchPanel('home')">←</button>
+                <button class="nav-rack-btn" onclick="switchPanel('home')">🏠</button>
+            </div>
+        </div>
+
+        <div class="deposit-flow-wrapper">
+            <div class="deposit-heading-group">
+                <h2>📤 Withdraw</h2>
+                <p>Withdraw funds to your preferred account (Min: 100 ETB)</p>
+            </div>
+
+            <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Select Bank / Method</label>
+            <select id="withdraw-bank-select" class="form-input-control">
+                <option value="abysinia">Bank of Abyssinia</option>
+                <option value="cbe">Commercial Bank of Ethiopia (CBE)</option>
+                <option value="dashen">Dashen Bank</option>
+                <option value="mpesa">M-Pesa</option>
+                <option value="telebirr">Telebirr</option>
+            </select>
+
+            <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Account Number</label>
+            <input type="text" id="withdraw-account-num" class="form-input-control" placeholder="Enter Account / Phone Number">
+
+            <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Receiver Name</label>
+            <input type="text" id="withdraw-receiver-name" class="form-input-control" placeholder="Enter Full Name">
+
+            <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Amount (ETB)</label>
+            <input type="number" id="withdraw-amount-field" class="form-input-control" placeholder="Minimum 100 ETB" value="100">
+
+            <button class="action-submit-row-btn" onclick="submitWithdrawRequest()">Submit Withdrawal</button>
+        </div>
+    </div>
+
+    <!-- VIEW 4: HISTORY -->
+    <div id="view-history" class="view-panel">
+        <div class="identity-strip-panel">
+            <div class="identity-profile-info">
+                <div class="identity-avatar-box">📜</div>
+                <div class="identity-meta">
+                    <h4>Transaction History</h4>
+                    <p>Track your deposits and withdrawals</p>
+                </div>
+            </div>
+            <div class="navigation-control-rack">
+                <button class="nav-rack-btn" onclick="switchPanel('home')">←</button>
+                <button class="nav-rack-btn" onclick="switchPanel('home')">🏠</button>
+            </div>
+        </div>
+
+        <div class="deposit-flow-wrapper">
+            <div class="history-list-container" id="history-items-container">
+                <p style="color: var(--text-secondary); text-align: center; font-size: 13px;">No history available yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 3: DEPOSIT CONFIRM -->
+    <div id="view-deposit-confirm" class="view-panel">
+        
+        <div class="dialogue-backdrop-shield" id="popup-overlay" onclick="handleOutsideDialogueClick()">
+            <div class="instructional-dialogue-card" onclick="event.stopPropagation()">
+                <h4>How to deposit</h4>
+                <p>Deposit money to the following account:</p>
+                <div class="copy-pill-element" id="admin-account-display" onclick="copyTextToClipboard(adminDepositDetails.accountNumber)">📋 +251945754766</div>
+                <p>Account Holder: <span id="admin-holder-display" style="color:#fff; font-weight:bold;">Admin Account</span></p>
+                <p style="margin-top: 8px;">And then please paste the transaction ID reference in the form below.<br>Example Transaction ID: <span style="color:#fff; font-family:monospace; font-weight:bold;">CE535PPHGP</span></p>
+            </div>
+        </div>
+
+        <div class="dialogue-backdrop-shield" id="coupon-overlay" onclick="closeCouponModal()">
+            <div class="instructional-dialogue-card" onclick="event.stopPropagation()">
+                <h4 style="color:var(--brand-crimson);">Redeem Promo Coupon</h4>
+                <p style="margin-bottom:12px;">Enter your code below to claim instant bonus ETB:</p>
+                <input type="text" id="coupon-code-input" class="form-input-control" placeholder="e.g. SPEED100 or WELCOME50" style="text-transform:uppercase;">
+                <button class="action-submit-row-btn" onclick="submitCouponCode()">Claim Bonus</button>
+            </div>
+        </div>
+
+        <div class="toast-success-banner" id="success-toast">
+            <div class="toast-left">
+                <div class="toast-check-circle">✓</div>
+                <div class="toast-text">
+                    <h5>Success!</h5>
+                    <p>Deposit request initiated successfully</p>
+                </div>
+            </div>
+            <div class="toast-dismiss" onclick="hideSuccessToast()">✕</div>
+        </div>
+
+        <div class="identity-strip-panel" id="confirm-user-header" style="display:none;">
+            <div class="identity-profile-info">
+                <div class="identity-avatar-box">💼</div>
+                <div class="identity-meta">
+                    <h4 class="sync-name">User</h4>
+                    <p class="sync-phone">+251900000000</p>
+                </div>
+            </div>
+            <div class="navigation-control-rack">
+                <button class="nav-rack-btn" onclick="handleBackKeyPress()">←</button>
+                <button class="nav-rack-btn" onclick="switchPanel('home')">🏠</button>
+            </div>
+        </div>
+
+        <div class="deposit-flow-wrapper" style="padding-top:12px;">
+            <h2 style="font-size: 22px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                <span id="confirm-icon-spacer" style="display:none;">💸</span> Deposit
+            </h2>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">Recharge and enjoy your favorite games</p>
+
+            <div class="structured-info-list">
+                <div class="structured-data-row">
+                    <span class="field-key">Player</span>
+                    <span class="field-val" id="confirm-player-id">tg_user</span>
+                </div>
+                <div class="structured-data-row">
+                    <span class="field-key">Transaction Method</span>
+                    <span class="field-val" id="confirm-method-label">Telebirr</span>
+                </div>
+                <div class="structured-data-row">
+                    <span class="field-key">Status</span>
+                    <span class="field-val" style="color: var(--accent-gold);">Initiated</span>
+                </div>
+                <div class="structured-data-row" id="row-time" style="display: none;">
+                    <span class="field-key">Created At</span>
+                    <span class="field-val">Just now</span>
+                </div>
+                <div class="structured-data-row" id="row-amount-display" style="display: none; border-bottom: none; padding-top: 18px;">
+                    <span class="field-key" style="font-size: 15px; font-weight:700; color:#fff;">Amount</span>
+                    <span class="field-val" id="text-amount-target" style="font-size: 20px; font-weight: 800; color: #fff;">200 ETB</span>
+                </div>
+            </div>
+
+            <div class="collapsed-tutorial-trigger" id="collapsed-tutorial-strip" onclick="restoreDialogueOverlay()">
+                How to deposit
+            </div>
+
+            <div class="phone-input-field-wrapper" id="phone-copy-row">
+                <span id="admin-account-inline">+251945754766</span>
+                <button class="square-copy-btn" onclick="copyTextToClipboard(document.getElementById('admin-account-inline').textContent)">📋</button>
+            </div>
+
+            <textarea class="sms-entry-box" id="sms-input-box" placeholder="Paste transaction reference / SMS from admin payment here..."></textarea>
+
+            <div class="footer-action-row">
+                <button class="footer-btn-outline" onclick="cancelActiveOrder()">Cancel</button>
+                <button class="footer-btn-solid" onclick="submitDepositSMS()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ==================== SUPABASE SETUP ====================
+    const SUPABASE_URL = 'https://khdrauqyqzayrnrlhlgv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoZHJhdXF5cXpheXJucmxobGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0MzAxMTYsImV4cCI6MjEwMTAwNjExNn0.u4_CIEOpU9qrqzixMvoFoFVEhBkFTIuB7Zoi9N6WErE';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ==================== SOCKET ====================
+    const SOCKET_SERVER_URL = "https://keno-server-20g6.onrender.com";
+    let socket;
+    
+    let currentUser = {
+        id: 'guest_user',
+        name: 'Guest Player',
+        phone: '+251900000000',
+        balance: 0.00
+    };
+
+    let userHistory = [];
+
+    let adminDepositDetails = {
+        accountNumber: "+251945754766",
+        accountHolder: "Speed Games Official Admin"
+    };
+
+    let isBalanceHidden = false;
+    let orderTrackingState = {
+        hasLiveOrder: false,
+        isDialogueActive: false,
+        selectedAmount: 200
+    };
+
+    let balanceRefreshInterval = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initTelegramUser();
+        initSocketConnection();
+        fetchAdminDepositDetails();
+        startAutoBalanceRefresh();
+    });
+
+    // Refresh when user comes back to the page
+    window.addEventListener('focus', () => {
+        requestBalanceSync();
+    });
+
+    // Also refresh when page becomes visible again (mobile)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            requestBalanceSync();
+        }
+    });
+
+    function startAutoBalanceRefresh() {
+        // Request balance every 12 seconds
+        if (balanceRefreshInterval) clearInterval(balanceRefreshInterval);
+        balanceRefreshInterval = setInterval(() => {
+            if (socket && socket.connected) {
+                socket.emit('requestBalance', { userId: currentUser.id });
+            }
+        }, 12000);
+    }
+
+    function initTelegramUser() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.expand();
+            tg.ready();
+
+            const user = tg.initDataUnsafe?.user;
+            if (user) {
+                currentUser.id = `tg_${user.id}`;
+                currentUser.name = user.first_name + (user.last_name ? ` ${user.last_name}` : '');
+                currentUser.phone = user.username ? `@\( {user.username}` : `+251 \){user.id.toString().slice(-9)}`;
+            }
+        }
+
+        document.getElementById('user-display-name').textContent = currentUser.name;
+        document.getElementById('user-display-phone').textContent = currentUser.phone;
+        document.querySelectorAll('.sync-name').forEach(el => el.textContent = currentUser.name);
+        document.querySelectorAll('.sync-phone').forEach(el => el.textContent = currentUser.phone);
+        document.getElementById('confirm-player-id').textContent = currentUser.id;
+
+        syncUserToSupabase();
+    }
+
+    async function syncUserToSupabase() {
+        try {
+            await supabaseClient
+                .from('users')
+                .upsert({
+                    user_id: currentUser.id,
+                    name: currentUser.name,
+                    phone: currentUser.phone
+                }, {
+                    onConflict: 'user_id',
+                    ignoreDuplicates: true
+                });
+        } catch (err) {
+            console.error('Failed to sync user profile:', err);
+        }
+    }
+
+    function initSocketConnection() {
+        socket = io(SOCKET_SERVER_URL, {
+            transports: ['websocket', 'polling']
+        });
+
+        socket.on('connect', () => {
+            console.log('Connected to backend:', socket.id);
+            socket.emit('initUser', {
+                userId: currentUser.id,
+                name: currentUser.name,
+                phone: currentUser.phone
+            });
+            socket.emit('requestBalance', { userId: currentUser.id });
+        });
+
+        socket.on('balanceUpdate', (data) => {
+            if (data && typeof data.balance === 'number') {
+                currentUser.balance = data.balance;
+                updateBalanceDisplay();
+            }
+        });
+
+        socket.on('depositSuccess', (data) => {
+            alert(`✅ Deposit Confirmed!\n${data.message}\nNew Balance: ${data.balance} ETB`);
+            addHistoryItem('Deposit', data.amount || orderTrackingState.selectedAmount, 'Success');
+            cancelActiveOrder();
+        });
+
+        socket.on('depositError', (data) => {
+            alert(`❌ Deposit Failed: ${data.message}`);
+        });
+
+        socket.on('withdrawResponse', (data) => {
+            alert(data.message);
+            if (data.success) {
+                addHistoryItem('Withdrawal', data.amount || 100, 'Pending');
+                switchPanel('home');
+            }
+        });
+
+        socket.on('couponResult', (data) => {
+            alert(data.message);
+            if (data.success) {
+                closeCouponModal();
+            }
+        });
+    }
+
+    // ==================== SUPABASE: ADMIN ACCOUNT ====================
+    async function fetchAdminDepositDetails() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('admin_config')
+                .select('account_number, account_holder')
+                .limit(1)
+                .maybeSingle();
+
+            if (error) {
+                console.error('Supabase error:', error.message);
+                return;
+            }
+
+            if (data) {
+                adminDepositDetails.accountNumber = data.account_number || adminDepositDetails.accountNumber;
+                adminDepositDetails.accountHolder = data.account_holder || adminDepositDetails.accountHolder;
+                updateAdminDisplayFields();
+            }
+        } catch (err) {
+            console.error('Fetch failed:', err);
+        }
+    }
+
+    function updateAdminDisplayFields() {
+        const acc = adminDepositDetails.accountNumber;
+        const holder = adminDepositDetails.accountHolder;
+        document.getElementById('admin-account-display').innerHTML = `📋 ${acc}`;
+        document.getElementById('admin-holder-display').textContent = holder;
+        document.getElementById('admin-account-inline').textContent = acc;
+    }
+
+    function updateBalanceDisplay() {
+        const valSpan = document.getElementById('header-balance-val');
+        if (isBalanceHidden) {
+            valSpan.textContent = '*** ETB';
+        } else {
+            valSpan.textContent = `${currentUser.balance.toFixed(2)} ETB`;
+        }
+    }
+
+    function toggleBalanceObscure() {
+        isBalanceHidden = !isBalanceHidden;
+        document.getElementById('balance-eye').style.opacity = isBalanceHidden ? '0.3' : '0.8';
+        updateBalanceDisplay();
+    }
+
+    function requestBalanceSync() {
+        if (socket && socket.connected) {
+            socket.emit('requestBalance', { userId: currentUser.id });
+        }
+        fetchAdminDepositDetails();
+    }
+
+    // UI ROUTING
+    function switchPanel(panelId) {
+        document.querySelectorAll('.view-panel').forEach(view => {
+            view.classList.remove('active-view');
+            view.style.display = "none";
+        });
+        
+        const destination = document.getElementById(`view-${panelId}`);
+        if (destination) {
+            destination.style.display = "flex";
+            destination.classList.add('active-view');
+        }
+        window.scrollTo(0, 0);
+
+        // Refresh balance when going back to home
+        if (panelId === 'home') {
+            requestBalanceSync();
+        }
+    }
+
+    function handlePlusNavigation() {
+        if (orderTrackingState.hasLiveOrder) {
+            switchPanel('deposit-confirm');
+        } else {
+            switchPanel('deposit-form');
+        }
+    }
+
+    function commitFormAndOrder() {
+        fetchAdminDepositDetails();
+
+        const valueRecorded = document.getElementById('user-amount-field').value;
+        orderTrackingState.selectedAmount = valueRecorded ? parseFloat(valueRecorded) : 200;
+        document.getElementById('text-amount-target').textContent = `${orderTrackingState.selectedAmount} ETB`;
+        
+        orderTrackingState.hasLiveOrder = true;
+        orderTrackingState.isDialogueActive = true;
+
+        document.getElementById('success-toast').style.display = "flex";
+        document.getElementById('confirm-user-header').style.display = "none";
+        document.getElementById('confirm-icon-spacer').style.display = "none";
+        document.getElementById('row-time').style.display = "none";
+        document.getElementById('row-amount-display').style.display = "none";
+        document.getElementById('collapsed-tutorial-strip').style.display = "none";
+        document.getElementById('phone-copy-row').style.display = "none";
+
+        document.getElementById('popup-overlay').classList.add('active-overlay');
+        switchPanel('deposit-confirm');
+    }
+
+    function handleOutsideDialogueClick() {
+        document.getElementById('popup-overlay').classList.remove('active-overlay');
+        orderTrackingState.isDialogueActive = false;
+
+        document.getElementById('confirm-user-header').style.display = "flex";
+        document.getElementById('confirm-icon-spacer').style.display = "inline-block";
+        document.getElementById('row-time').style.display = "flex";
+        document.getElementById('row-amount-display').style.display = "flex";
+        document.getElementById('collapsed-tutorial-strip').style.display = "block";
+        document.getElementById('phone-copy-row').style.display = "flex";
+    }
+
+    function handleBackKeyPress() {
+        if (!orderTrackingState.isDialogueActive) {
+            switchPanel('home');
+        }
+    }
+
+    function restoreDialogueOverlay() {
+        orderTrackingState.isDialogueActive = true;
+        document.getElementById('popup-overlay').classList.add('active-overlay');
+    }
+
+    function hideSuccessToast() {
+        document.getElementById('success-toast').style.display = "none";
+    }
+
+    function cancelActiveOrder() {
+        orderTrackingState.hasLiveOrder = false;
+        orderTrackingState.isDialogueActive = false;
+        hideSuccessToast();
+        document.getElementById('sms-input-box').value = '';
+        switchPanel('deposit-form');
+    }
+
+    // ==================== WITHDRAW → SUPABASE (NO LOCAL DEDUCT) ====================
+    async function submitWithdrawRequest() {
+        const bank = document.getElementById('withdraw-bank-select').value;
+        const accountNum = document.getElementById('withdraw-account-num').value.trim();
+        const receiverName = document.getElementById('withdraw-receiver-name').value.trim();
+        const amount = parseFloat(document.getElementById('withdraw-amount-field').value);
+
+        if (!accountNum || !receiverName) {
+            alert('Please fill in all required withdrawal fields.');
+            return;
+        }
+
+        if (isNaN(amount) || amount < 100) {
+            alert('Minimum withdrawal amount is 100 ETB.');
+            return;
+        }
+
+        if (currentUser.balance < amount) {
+            alert('Insufficient account balance for this withdrawal.');
+            return;
+        }
+
+        const payload = {
+            user_id: currentUser.id,
+            bank: bank,
+            account_number: accountNum,
+            account_holder: receiverName,
+            amount: amount,
+            status: 'pending',
+            created_at: new Date().toISOString()
+        };
+
+        try {
+            const { error } = await supabaseClient
+                .from('withdrawals')
+                .insert([payload]);
+
+            if (error) {
+                console.error('Supabase withdraw error:', error);
+                alert('Failed to submit withdrawal.\n' + error.message);
+                return;
+            }
+
+            addHistoryItem(`Withdrawal (${bank.toUpperCase()})`, amount, 'Pending');
+            alert('Withdrawal request submitted successfully!\nStatus: Pending approval.');
+            switchPanel('home');
+        } catch (err) {
+            console.error(err);
+            alert('Network error while submitting withdrawal.');
+        }
+    }
+
+    // HISTORY
+    function openHistoryPanel() {
+        renderHistoryList();
+        switchPanel('history');
+    }
+
+    function addHistoryItem(type, amount, status) {
+        userHistory.unshift({
+            type: type,
+            amount: amount,
+            status: status,
+            date: new Date().toLocaleString()
+        });
+    }
+
+    function renderHistoryList() {
+        const container = document.getElementById('history-items-container');
+        if (userHistory.length === 0) {
+            container.innerHTML = `<p style="color: var(--text-secondary); text-align: center; font-size: 13px;">No history available yet.</p>`;
+            return;
+        }
+
+        let html = '';
+        userHistory.forEach(h => {
+            const statusClass = h.status.toLowerCase() === 'success' ? 'success' : 'pending';
+            const amtColor = h.type.toLowerCase().includes('withdraw') ? '#ff3b30' : '#3ca852';
+            const sign = h.type.toLowerCase().includes('withdraw') ? '-' : '+';
+            
+            html += `
+                <div class="history-item-card">
+                    <div class="history-item-left">
+                        <h5>${h.type}</h5>
+                        <p>${h.date}</p>
+                    </div>
+                    <div class="history-item-right">
+                        <div class="amt" style="color: \( {amtColor};"> \){sign}${h.amount} ETB</div>
+                        <span class="status \( {statusClass}"> \){h.status}</span>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // ==================== DEPOSIT → SUPABASE (MANUAL REVIEW) ====================
+    async function submitDepositSMS() {
+        const smsContent = document.getElementById('sms-input-box').value.trim();
+        if (!smsContent) {
+            alert('Please paste your transaction reference or SMS.');
+            return;
+        }
+
+        const payload = {
+            user_id: currentUser.id,
+            amount: orderTrackingState.selectedAmount,
+            transaction_id: smsContent,
+            status: 'pending',
+            created_at: new Date().toISOString()
+        };
+
+        try {
+            const { error } = await supabaseClient
+                .from('deposits')
+                .insert([payload]);
+
+            if (error) {
+                console.error('Supabase deposit error:', error);
+                alert('Failed to submit deposit request.\n' + error.message);
+                return;
+            }
+
+            addHistoryItem('Deposit', orderTrackingState.selectedAmount, 'Pending');
+            alert('Deposit request submitted to Admin!\nStatus: Pending approval.');
+            
+            cancelActiveOrder();
+            switchPanel('home');
+        } catch (err) {
+            console.error(err);
+            alert('Network error while submitting deposit.');
+        }
+    }
+
+    function openCouponModal() {
+        document.getElementById('coupon-overlay').classList.add('active-overlay');
+    }
+
+    function closeCouponModal() {
+        document.getElementById('coupon-overlay').classList.remove('active-overlay');
+    }
+
+    function submitCouponCode() {
+        const code = document.getElementById('coupon-code-input').value.trim();
+        if (!code) {
+            alert('Please enter a coupon code.');
+            return;
+        }
+
+        socket.emit('redeemCoupon', {
+            userId: currentUser.id,
+            code: code
+        });
+    }
+
+    function launchGame(pageUrl) {
+        window.location.href = `\( {pageUrl}?userId= \){encodeURIComponent(currentUser.id)}`;
+    }
+
+    function copyTextToClipboard(text) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text);
+            alert(`Copied: ${text}`);
+        } else {
+            alert(`Copy manually: ${text}`);
+        }
+    }
+</script>
+</body>
+</html>

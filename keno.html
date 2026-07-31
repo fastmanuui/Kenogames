@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fast Keno - Multiplayer Live</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #13151b;
+            --bg-secondary: #1a1c23;
+            --bg-tertiary: #23262f;
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --accent-green: #2e8b57;
+            --accent-green-light: #4caf50;
+            --accent-orange: #ffc107;
+            --accent-cyan: #00e5ff;
+            --accent-red: #ff3b5c;
+            --accent-match: #4caf50;
+            --grid-bg: #2a2e38;
+            --ball-base: #1c2733;
+            --ball-border: #3b536e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; user-select: none; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+        
+        #app { width: 100%; max-width: 450px; background-color: var(--bg-secondary); display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: #111; font-size: 16px; border-bottom: 1px solid #333; }
+        .header-2 { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: var(--bg-secondary); border-bottom: 1px solid #2a2e38; }
+        .bg-logo { background-color: #ff1744; color: white; padding: 4px 10px; border-radius: 8px; font-weight: 900; font-size: 20px; letter-spacing: -1px; }
+        .balance-pill { background-color: var(--bg-tertiary); padding: 6px 12px; border-radius: 20px; font-size: 14px; display: flex; align-items: center; gap: 8px; border: 1px solid #3a3f4c; }
+        .deposit-btn { background-color: #ff1744; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .header-3 { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: var(--bg-main); }
+        .fast-keno-logo { color: var(--accent-green-light); font-weight: 900; font-style: italic; font-size: 18px; line-height: 1; }
+        .fast-keno-logo span { color: white; display: block; font-size: 12px;}
+        .timer-overlay-text { color: var(--text-muted); font-size: 13px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
+        .timer-red { color: var(--accent-red); animation: pulse 1s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        #upper-area { width: 100%; background-color: var(--bg-main); position: relative; }
+        #phase-betting { display: flex; flex-direction: column; }
+        .grid-container { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; padding: 10px 10px; }
+        .num-btn { background-color: var(--grid-bg); color: #9ba3b0; border: none; border-radius: 4px; aspect-ratio: 1; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+        .num-btn:active { transform: scale(0.9); }
+        .num-btn.selected { background-color: #0b3d4b; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        
+        .controls-wrapper { padding: 10px 15px; background-color: var(--bg-secondary); }
+        .bet-adjust { display: flex; gap: 5px; margin-bottom: 10px; height: 45px; }
+        .btn-adjust { background-color: var(--grid-bg); color: white; border: none; border-radius: 4px; flex: 1; font-size: 20px; font-weight: bold; cursor: pointer; }
+        .btn-val { background-color: var(--grid-bg); flex: 3; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; border-radius: 4px; }
+        .btn-multiplier { background-color: #24353a; color: #64b5f6; flex: 1.5; font-size: 13px; }
+        
+        .action-row { display: flex; gap: 5px; margin-bottom: 10px; }
+        .btn-action-small { background-color: var(--grid-bg); color: var(--text-muted); border: none; border-radius: 4px; padding: 8px; flex: 1; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-bet-main { width: 100%; height: 50px; background-color: #4a5c4e; color: #fff; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; }
+        .btn-bet-main.active { background-color: #3b8c54; }
+        .btn-bet-main.active:active { transform: scale(0.98); }
+
+        #phase-drawing { display: none; flex-direction: column; align-items: center; justify-content: flex-start; height: 420px; background: radial-gradient(circle at 50% 40%, #152c38 0%, #0d1318 100%); position: relative; overflow: hidden; border-bottom: 1px solid #2a2e38; padding: 15px 10px; }
+        .radar-bg { position: absolute; top: 50%; left: 50%; width: 150%; height: 150%; transform: translate(-50%, -50%); background-image: repeating-radial-gradient(circle at center, transparent 0, transparent 40px, rgba(76, 175, 80, 0.05) 41px, rgba(76, 175, 80, 0.05) 42px); z-index: 1; pointer-events: none; }
+        .draw-counter-ui { position: absolute; top: 10px; right: 15px; color: white; font-weight: bold; font-size: 13px; font-family: monospace; z-index: 6; }
+        
+        .big-ball-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; z-index: 5; padding-bottom: 10px; }
+        .big-ball { width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #2a415c, #090e15); border: 2px solid #557599; color: white; font-weight: bold; font-size: 42px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(255,255,255,0.1), 0 0 25px rgba(85, 117, 153, 0.7); transition: all 0.2s; }
+        
+        .small-balls-container { width: 100%; padding: 0 5px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; z-index: 5; margin-top: 22px; min-height: 80px; }
+        .small-ball { width: 100%; aspect-ratio: 1; max-width: 36px; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--ball-base), #080b10); border: 1.5px solid var(--ball-border); color: #d1e1f0; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(255,255,255,0.1), 0 2px 5px rgba(0,0,0,0.5); animation: popInDraw 0.3s ease-out; transition: all 0.2s; }
+        .matched-draw-ball { border-color: var(--accent-match) !important; box-shadow: 0 0 15px rgba(76, 175, 80, 0.8), inset 0 0 10px rgba(76, 175, 80, 0.4) !important; color: var(--accent-match) !important; }
+
+        @keyframes popInDraw { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1;} }
+
+        .middle-nav { display: flex; background-color: var(--bg-main); border-bottom: 1px solid #2a2e38; padding: 0 10px; }
+        .nav-item { flex: 1; text-align: center; padding: 12px 2px; color: var(--text-muted); font-size: 11px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; display: flex; justify-content: center; align-items: center; gap: 4px; }
+        .nav-item.active { color: var(--accent-green-light); border-bottom: 2px solid var(--accent-green-light); }
+
+        .app-body { flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; background-color: var(--bg-secondary); }
+        .app-body::-webkit-scrollbar { width: 4px; }
+        .app-body::-webkit-scrollbar-track { background: var(--bg-main); }
+        .app-body::-webkit-scrollbar-thumb { background: #3a3f4c; border-radius: 4px;}
+        .tab-content { display: none; flex-direction: column; padding: 10px 15px 15px 15px;}
+        .tab-content.active { display: flex; }
+
+        .tickets-header { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .ticket-item { background-color: #1f222b; border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; animation: slideIn 0.3s ease; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .ticket-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--accent-green-light); font-weight: bold; }
+        .ticket-slots { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
+        .slot { aspect-ratio: 1; background-color: #232730; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: transparent; }
+        .slot.filled { background-color: #3b4b59; color: white; }
+        .slot.matched { background-color: var(--accent-match); color: #000; }
+        .ticket-bottom { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-top: 2px; }
+        .status-badge { color: var(--accent-orange); font-weight: bold; font-size: 12px; }
+        .status-badge.win { color: var(--accent-match); }
+        .status-badge.loss { color: var(--text-muted); font-weight: normal;}
+        
+        .history-divider { display: flex; align-items: center; justify-content: center; margin: 15px 0; gap: 15px; }
+        .history-divider .line { height: 1px; background-color: #3a3f4c; flex-grow: 1; }
+        .history-meta { text-align: center; font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+        #empty-history-msg, #empty-tickets-msg { text-align: center; padding: 30px; color: var(--text-muted); font-style: italic; }
+
+        .res-header-row { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 11px; margin-bottom: 10px; padding: 0 5px; }
+        .result-row { background-color: var(--bg-tertiary); border-radius: 6px; padding: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 15px; border: 1px solid #2a2e38; }
+        .result-id-col { display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 90px; }
+        .combo-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; flex-grow: 1;}
+        .combo-cell { background-color: #2a2e38; color: #8b949e; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; border-radius: 2px; font-weight: bold; }
+        .combo-wait-box { background-color: #2a2e38; color: #8b949e; width: 100%; height: 40px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; letter-spacing: 1px; flex-grow: 1; }
+
+        .stats-header-row { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 11px; margin-bottom: 10px; }
+        .stat-row { display: flex; align-items: center; padding: 5px 0; gap: 12px; }
+        .stat-num { background: #2a2e38; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-weight: bold; color: #8b949e; font-size: 13px; }
+        .stat-bar-track { flex-grow: 1; height: 2px; background: #2a2e38; display: flex; align-items: center; }
+        .stat-bar-fill { height: 2px; background: var(--accent-match); transition: width 0.3s ease; }
+        .stat-val { width: 30px; text-align: right; color: white; font-size: 13px; font-weight: 500; }
+
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.82); display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 35px; z-index: 100; }
+        .result-box { background: var(--bg-tertiary); padding: 22px; border-radius: 12px; text-align: center; border: 2px solid var(--accent-green-light); width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+        .result-box h1 { margin-bottom: 5px; color: white; font-size: 20px; }
+        .result-box .payout { font-size: 26px; color: var(--accent-match); font-weight: bold; margin: 10px 0;}
+        .res-stats { display: flex; justify-content: space-around; background: var(--bg-main); padding: 8px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
+        .close-overlay { margin-top: 5px; padding: 10px 20px; background: #2a2e38; border: none; color: #8b949e; border-radius: 5px; font-weight: bold; font-size: 13px; width: 100%; pointer-events: none;}
+        
+        #msg-banner { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.9); color: var(--accent-cyan); padding: 10px 20px; border-radius: 20px; font-weight: bold; z-index: 150; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="msg-banner">Message</div>
+
+    <div class="top-bar"><span>✕</span><span style="font-weight: bold;">Speed Games</span><span>⋮</span></div>
+    <div class="header-2">
+        <div class="bg-logo">S</div>
+        <div class="balance-pill">
+            <span onclick="requestBalanceSync()" style="cursor:pointer;">↻</span>
+            <span id="ui-balance">0.00 ETB</span>
+        </div>
+        <div style="display: flex; gap: 5px;">
+            <button class="deposit-btn" onclick="goToLandingPage()">+</button>
+            <span style="background: #ff1744; padding: 6px 10px; border-radius: 5px; color: white; cursor: pointer;">👤</span>
+        </div>
+    </div>
+    <div class="header-3">
+        <div class="fast-keno-logo"><span>FAST</span>KENO</div>
+        <div class="timer-overlay-text">
+            <span id="ui-timer">00 : 00</span>
+            <span id="ui-round-id" style="font-weight:normal; margin-left: 5px;">ID: ---</span>
+        </div>
+        <div style="color: var(--accent-green-light); font-size: 24px; cursor: pointer;">≡</div>
+    </div>
+
+    <div id="upper-area">
+        <div id="phase-betting">
+            <div class="grid-container" id="grid"></div>
+            <div class="controls-wrapper">
+                <div class="action-row">
+                    <button class="btn-action-small" onclick="FrontendApp.clearNumbers()">🗑 CLEAR</button>
+                    <button class="btn-action-small" onclick="FrontendApp.autoPick()" style="color: var(--accent-cyan);">⚡ AUTO PICK</button>
+                </div>
+                <div class="bet-adjust">
+                    <button class="btn-adjust btn-adjust-bet" data-action="minus">−</button>
+                    <div class="btn-val" id="ui-bet">2.00</div>
+                    <button class="btn-adjust btn-adjust-bet" data-action="plus">+</button>
+                    <button class="btn-adjust btn-multiplier btn-adjust-bet" data-action="x2">X2</button>
+                    <button class="btn-adjust btn-multiplier btn-adjust-bet" data-action="max">MAX</button>
+                </div>
+                <button class="btn-bet-main" id="btn-bet">BET</button>
+            </div>
+        </div>
+
+        <div id="phase-drawing">
+            <div class="radar-bg"></div>
+            <div class="draw-counter-ui"><span id="ui-draw-count">00</span> / 20</div>
+            <div class="small-balls-container" id="small-balls-container"></div>
+            <div class="big-ball-container">
+                <div class="big-ball" id="big-ball">?</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="middle-nav">
+        <div class="nav-item active" onclick="switchTab('game')">▶ GAME</div>
+        <div class="nav-item" onclick="switchTab('history')">↺ HISTORY</div>
+        <div class="nav-item" onclick="switchTab('results')">✔️ RESULTS</div>
+        <div class="nav-item" onclick="switchTab('statistics')">📊 STATS</div>
+    </div>
+
+    <div class="app-body" id="app-body">
+        <div id="tab-game" class="tab-content active">
+            <div class="tickets-header">
+                <span>My Tickets: <span id="ui-ticket-count">0</span> / 20</span>
+                <span>Total Bet: <span id="ui-my-bets-total">0</span></span>
+            </div>
+            <div id="tickets-list">
+                <div id="empty-tickets-msg">No tickets placed. Select numbers and tap BET.</div>
+            </div>
+        </div>
+        <div id="tab-history" class="tab-content">
+            <div id="history-list"></div>
+        </div>
+        <div id="tab-results" class="tab-content">
+            <div class="res-header-row"><span>Draw ID</span><span>Combination</span></div>
+            <div id="results-list"></div>
+        </div>
+        <div id="tab-statistics" class="tab-content">
+            <div class="stats-header-row"><span>Historical Data</span><span></span></div>
+            <div id="statistics-list"></div>
+        </div>
+    </div>
+
+    <div class="overlay" id="result-overlay">
+        <div class="result-box">
+            <h1 id="res-title">Draw Complete</h1>
+            <div class="res-stats">
+                <div>Tickets: <span id="res-total-tickets" style="color:var(--accent-cyan); font-weight:bold;">0</span></div>
+                <div>Bet: <span id="res-total-bet" style="color:var(--accent-orange); font-weight:bold;">0.00</span></div>
+            </div>
+            <div class="payout" id="res-payout">0.00 ETB</div>
+            <button class="close-overlay" id="ui-overlay-countdown">Processing...</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const MAX_SELECTION = 10;
+    const MAX_TICKETS = 20;
+    const TOTAL_NUMBERS = 80;
+    const DRAW_COUNT = 20;
+    const PAYOUTS = {
+        1: { 1: 3.5 },
+        2: { 1: 1, 2: 10 },
+        3: { 2: 2, 3: 50 },
+        4: { 2: 1.5, 3: 10, 4: 80 },
+        5: { 2: 1, 3: 3, 4: 30, 5: 150 },
+        6: { 3: 2, 4: 15, 5: 60, 6: 500 },
+        7: { 0: 1, 3: 2, 4: 4, 5: 20, 6: 80, 7: 1000 },
+        8: { 0: 1, 4: 5, 5: 15, 6: 50, 7: 200, 8: 2000 },
+        9: { 0: 2, 4: 2, 5: 10, 6: 25, 7: 125, 8: 1000, 9: 5000 },
+        10: { 0: 2, 5: 5, 6: 30, 7: 100, 8: 300, 9: 2000, 10: 10000 }
+    };
+
+    const SOCKET_SERVER_URL = "https://keno-server-20g6.onrender.com";
+
+    function getUserIdFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('userId') || 'guest_user';
+    }
+
+    /* =========================================
+       NETWORK MANAGER (works with your server.js)
+       ========================================= */
+    const APIManager = {
+        socket: null,
+        userId: getUserIdFromUrl(),
+        
+        init() {
+            this.socket = io(SOCKET_SERVER_URL, {
+                transports: ['websocket', 'polling']
+            });
+
+            this.socket.on('connect', () => {
+                console.log('Connected to live backend!', this.socket.id);
+                this.socket.emit('initUser', {
+                    userId: this.userId,
+                    name: 'Keno Player',
+                    phone: ''
+                });
+                this.socket.emit('requestBalance', { userId: this.userId });
+            });
+
+            // Real balance from your server
+            this.socket.on('balanceUpdate', (data) => {
+                if (data && typeof data.balance === 'number') {
+                    FrontendApp.state.balance = data.balance;
+                    FrontendApp.updateUI();
+                }
+            });
+
+            this.socket.on('betError', (data) => {
+                FrontendApp.showBanner(data.message || 'Bet rejected');
+                // Refresh balance in case of mismatch
+                this.requestBalance();
+            });
+
+            this.socket.on('betSuccess', (data) => {
+                if (data && typeof data.newBalance === 'number') {
+                    FrontendApp.state.balance = data.newBalance;
+                    FrontendApp.updateUI();
+                }
+            });
+
+            this.socket.on('gameStateUpdate', (data) => FrontendApp.onServerStateUpdate(data));
+        },
+
+        sendBet(ticket) {
+            if (this.socket) {
+                this.socket.emit('placeBet', {
+                    id: ticket.id,
+                    numbers: ticket.numbers,
+                    bet: ticket.bet,
+                    userId: this.userId
+                });
+            }
+        },
+
+        requestBalance() {
+            if (this.socket) {
+                this.socket.emit('requestBalance', { userId: this.userId });
+            }
+        }
+    };
+
+
+    /* =========================================
+       FRONTEND APP
+       ========================================= */
+    const FrontendApp = {
+        state: {
+            balance: 0.00,
+            betAmount: 2.00,
+            selectedNumbers: new Set(),
+            currentTickets: [], 
+            personalHistory: [], 
+            statistics: {},
+            uiPhase: 'BETTING',
+            serverRoundId: null,
+            serverEndTime: 0,
+            serverDrawnNumbers: [],
+            globalResults: []
+        },
+        
+        clientTimerInterval: null,
+
+        init() {
+            this.loadCache();
+            this.createGrid();
+            this.initStatsDOM();
+            this.attachEventListeners();
+            APIManager.init(); 
+            this.startSmoothClientTimer();
+        },
+
+        // Only history + stats are cached (balance is always from server)
+        loadCache() {
+            const cachedHist = localStorage.getItem('fk_history');
+            const cachedStats = localStorage.getItem('fk_stats');
+
+            if (cachedHist) this.state.personalHistory = JSON.parse(cachedHist);
+            if (cachedStats) {
+                this.state.statistics = JSON.parse(cachedStats);
+            } else {
+                for(let i=1; i<=TOTAL_NUMBERS; i++) this.state.statistics[i] = 0;
+            }
+            this.renderHistory();
+        },
+        saveCache() {
+            localStorage.setItem('fk_history', JSON.stringify(this.state.personalHistory));
+            localStorage.setItem('fk_stats', JSON.stringify(this.state.statistics));
+        },
+
+        onServerStateUpdate(payload) {
+            this.state.serverRoundId = payload.roundId;
+            this.state.globalResults = payload.globalResults || [];
+            this.state.serverEndTime = payload.endTime;
+            
+            if (payload.phase === 'BETTING') {
+                if (this.state.uiPhase === 'RESULT' || this.state.uiPhase === 'DRAWING') {
+                    this.resetForNewRound();
+                }
+            } 
+            else if (payload.phase === 'DRAWING') {
+                if (this.state.uiPhase === 'BETTING') {
+                    this.state.serverDrawnNumbers = payload.drawnNumbers || [];
+                    this.startDrawingAnimation();
+                }
+            }
+            
+            this.updateUI();
+            if (document.getElementById('tab-results').classList.contains('active')) this.renderResults();
+            if (document.getElementById('tab-statistics').classList.contains('active')) this.renderStatistics();
+        },
+
+        createGrid() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            for (let i = 1; i <= TOTAL_NUMBERS; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'num-btn';
+                btn.textContent = i;
+                btn.id = `grid-btn-${i}`;
+                btn.onclick = () => this.handleNumberSelect(i, btn);
+                gridEl.appendChild(btn);
+            }
+        },
+
+        handleNumberSelect(num, btn) {
+            if (this.state.uiPhase !== 'BETTING') return;
+            if (this.state.selectedNumbers.has(num)) {
+                this.state.selectedNumbers.delete(num);
+                btn.classList.remove('selected');
+            } else {
+                if (this.state.selectedNumbers.size < MAX_SELECTION) {
+                    this.state.selectedNumbers.add(num);
+                    btn.classList.add('selected');
+                } else {
+                    this.showBanner("Maximum 10 numbers per ticket!");
+                }
+            }
+            this.updateUI();
+        },
+
+        clearNumbers() {
+            if (this.state.uiPhase !== 'BETTING') return;
+            this.state.selectedNumbers.clear();
+            document.querySelectorAll('.num-btn.selected').forEach(btn => btn.classList.remove('selected'));
+            this.updateUI();
+        },
+
+        autoPick() {
+            if (this.state.uiPhase !== 'BETTING') return;
+            this.clearNumbers();
+            let nums = Array.from({length: TOTAL_NUMBERS}, (_, i) => i + 1);
+            for (let i = nums.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [nums[i], nums[j]] = [nums[j], nums[i]];
+            }
+            let randomPicks = nums.slice(0, 10);
+            randomPicks.forEach(num => {
+                this.state.selectedNumbers.add(num);
+                document.getElementById(`grid-btn-${num}`).classList.add('selected');
+            });
+            this.updateUI();
+        },
+
+        placeBet() {
+            if (this.state.uiPhase !== 'BETTING') return this.showBanner("Betting closed!");
+            if (this.state.selectedNumbers.size === 0) return this.showBanner("Select numbers first!");
+            if (this.state.currentTickets.length >= MAX_TICKETS) return this.showBanner("Max tickets reached!");
+            if (this.state.balance < this.state.betAmount) return this.showBanner("Insufficient Balance!");
+
+            // Optimistic UI deduct (server will confirm with balanceUpdate)
+            this.state.balance -= this.state.betAmount;
+            
+            const sortedNums = Array.from(this.state.selectedNumbers).sort((a,b) => a - b);
+            const newTicket = {
+                id: this.state.currentTickets.length + 1,
+                numbers: sortedNums,
+                bet: this.state.betAmount,
+                matches: 0,
+                winAmount: 0
+            };
+
+            this.state.currentTickets.push(newTicket);
+            
+            // Send to your server (server deducts real balance)
+            APIManager.sendBet(newTicket);
+            
+            this.clearNumbers();
+            this.showBanner(`Ticket #${newTicket.id} Placed!`);
+            this.updateUI();
+            this.renderActiveTickets();
+        },
+
+        startSmoothClientTimer() {
+            clearInterval(this.clientTimerInterval);
+            this.clientTimerInterval = setInterval(() => {
+                const secondsLeft = Math.max(0, Math.floor((this.state.serverEndTime - Date.now()) / 1000));
+                
+                const uiTimer = document.getElementById('ui-timer');
+                if (this.state.uiPhase === 'BETTING') {
+                    uiTimer.textContent = `00 : ${secondsLeft < 10 ? '0'+secondsLeft : secondsLeft}`;
+                    uiTimer.classList.toggle('timer-red', secondsLeft <= 10);
+                } else {
+                    uiTimer.textContent = '-- : --';
+                    uiTimer.classList.remove('timer-red');
+                }
+
+                if (this.state.uiPhase === 'RESULT') {
+                    const overlayCount = document.getElementById('ui-overlay-countdown');
+                    overlayCount.textContent = `Next round starting in ${secondsLeft}s...`;
+                }
+            }, 1000);
+        },
+
+        startDrawingAnimation() {
+            this.state.uiPhase = 'DRAWING';
+            this.updateUI();
+            
+            document.getElementById('phase-betting').style.display = 'none';
+            document.getElementById('phase-drawing').style.display = 'flex';
+            
+            const smallBalls = document.getElementById('small-balls-container');
+            const bigBall = document.getElementById('big-ball');
+            const drawCount = document.getElementById('ui-draw-count');
+            
+            smallBalls.innerHTML = '';
+            bigBall.textContent = '?';
+            bigBall.classList.remove('matched-draw-ball');
+
+            let userNumbers = new Set();
+            this.state.currentTickets.forEach(t => t.numbers.forEach(n => userNumbers.add(n)));
+
+            let drawIndex = 0;
+            
+            const drawInterval = setInterval(() => {
+                if (drawIndex >= DRAW_COUNT) {
+                    clearInterval(drawInterval);
+                    setTimeout(() => this.processResults(), 1000);
+                    return;
+                }
+
+                const currentDrawn = this.state.serverDrawnNumbers[drawIndex];
+                if (currentDrawn) {
+                    this.state.statistics[currentDrawn]++;
+
+                    const sb = document.createElement('div');
+                    sb.className = 'small-ball';
+                    if (userNumbers.has(currentDrawn)) sb.classList.add('matched-draw-ball');
+                    sb.textContent = currentDrawn;
+                    smallBalls.appendChild(sb); 
+
+                    let dispCount = drawIndex + 1;
+                    drawCount.textContent = dispCount < 10 ? '0'+dispCount : dispCount;
+                    
+                    bigBall.textContent = currentDrawn;
+                    bigBall.classList.toggle('matched-draw-ball', userNumbers.has(currentDrawn));
+                    
+                    bigBall.style.animation = 'none';
+                    void bigBall.offsetWidth; 
+                    bigBall.style.animation = 'popInDraw 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+                    this.state.currentTickets.forEach(ticket => {
+                        if (ticket.numbers.includes(currentDrawn)) {
+                            ticket.matches++;
+                            const slotEl = document.getElementById(`t\( {ticket.id}-slot- \){currentDrawn}`);
+                            if(slotEl) slotEl.classList.add('matched');
+                        }
+                    });
+                }
+
+                drawIndex++;
+            }, 800);
+        },
+
+        processResults() {
+            this.state.uiPhase = 'RESULT';
+            let totalWin = 0;
+            let totalBet = 0;
+
+            this.state.currentTickets.forEach(ticket => {
+                const spots = ticket.numbers.length;
+                totalBet += ticket.bet;
+
+                let multiplier = 0;
+                if (PAYOUTS[spots] && PAYOUTS[spots][ticket.matches] !== undefined) {
+                    multiplier = PAYOUTS[spots][ticket.matches];
+                }
+                
+                ticket.winAmount = ticket.bet * multiplier;
+                totalWin += ticket.winAmount;
+
+                const statusEl = document.getElementById(`t${ticket.id}-status`);
+                if (statusEl) {
+                    statusEl.textContent = ticket.winAmount > 0 ? `+${ticket.winAmount.toFixed(2)}` : `Loss`;
+                    statusEl.className = ticket.winAmount > 0 ? 'status-badge win' : 'status-badge loss';
+                }
+            });
+
+            // IMPORTANT: Do NOT add totalWin to balance here!
+            // Your server already credits the win and sends balanceUpdate.
+
+            if (this.state.currentTickets.length > 0) {
+                const d = new Date();
+                this.state.personalHistory.unshift({
+                    id: this.state.serverRoundId,
+                    date: `\( {d.getMonth()+1}/ \){d.getDate()}/${d.getFullYear().toString().slice(-2)}`,
+                    tickets: JSON.parse(JSON.stringify(this.state.currentTickets)), 
+                    drawnNumbers: [...this.state.serverDrawnNumbers],
+                    totalWin: totalWin
+                });
+                if (this.state.personalHistory.length > 30) this.state.personalHistory.pop();
+            }
+
+            this.saveCache();
+            this.showResultOverlay(totalWin, totalBet);
+            this.updateUI();
+
+            // Ask server for the latest real balance (after it credits wins)
+            setTimeout(() => APIManager.requestBalance(), 500);
+        },
+
+        showResultOverlay(totalWin, totalBet) {
+            document.getElementById('res-title').textContent = (totalWin > 0 || this.state.currentTickets.length === 0) ? 'DRAW COMPLETE' : 'BETTER LUCK NEXT TIME';
+            document.getElementById('res-total-tickets').textContent = this.state.currentTickets.length;
+            document.getElementById('res-total-bet').textContent = totalBet.toFixed(2);
+            
+            const payoutEl = document.getElementById('res-payout');
+            payoutEl.textContent = this.state.currentTickets.length > 0 ? `+${totalWin.toFixed(2)} ETB` : 'No Tickets Placed';
+            payoutEl.style.color = totalWin > 0 ? 'var(--accent-match)' : 'var(--text-muted)';
+            
+            document.getElementById('result-overlay').style.display = 'flex';
+        },
+
+        resetForNewRound() {
+            this.state.uiPhase = 'BETTING';
+            document.getElementById('result-overlay').style.display = 'none';
+            document.getElementById('phase-drawing').style.display = 'none';
+            document.getElementById('phase-betting').style.display = 'flex';
+            
+            this.state.selectedNumbers.clear();
+            this.state.currentTickets = [];
+            this.state.serverDrawnNumbers = [];
+            
+            document.querySelectorAll('.num-btn').forEach(btn => btn.classList.remove('selected'));
+            this.renderActiveTickets();
+            this.renderHistory();
+            this.updateUI();
+
+            APIManager.requestBalance();
+        },
+
+        updateUI() {
+            document.getElementById('ui-balance').textContent = `${this.state.balance.toFixed(2)} ETB`;
+            document.getElementById('ui-bet').textContent = this.state.betAmount.toFixed(2);
+            document.getElementById('ui-round-id').textContent = `ID: ${this.state.serverRoundId || '---'}`;
+            
+            let totalBetsAmt = this.state.currentTickets.reduce((sum, t) => sum + t.bet, 0);
+            document.getElementById('ui-ticket-count').textContent = this.state.currentTickets.length;
+            document.getElementById('ui-my-bets-total').textContent = totalBetsAmt.toFixed(2);
+
+            const btn = document.getElementById('btn-bet');
+            if (this.state.uiPhase !== 'BETTING') {
+                btn.className = 'btn-bet-main';
+                btn.textContent = 'DRAW IN PROGRESS';
+            } else {
+                if (this.state.currentTickets.length >= MAX_TICKETS) {
+                    btn.className = 'btn-bet-main'; btn.textContent = 'MAX TICKETS REACHED';
+                } else if (this.state.selectedNumbers.size > 0) {
+                    btn.className = 'btn-bet-main active'; btn.textContent = 'BET';
+                } else {
+                    btn.className = 'btn-bet-main'; btn.textContent = 'BET';
+                }
+            }
+        },
+
+        buildTicketHTML(ticket, isHistory = false, drawnList = []) {
+            let slotsHtml = '';
+            for (let i = 0; i < 10; i++) {
+                if (i < ticket.numbers.length) {
+                    const num = ticket.numbers[i];
+                    let isMatch = isHistory ? drawnList.includes(num) : false;
+                    slotsHtml += `<div class="slot filled \( {isMatch ? 'matched' : ''}" id=" \){!isHistory ? 't'+ticket.id+'-slot-'+num : ''}">${num}</div>`;
+                } else {
+                    slotsHtml += `<div class="slot"></div>`;
+                }
+            }
+            let statusHtml = `<span class="status-badge" id="${!isHistory ? 't'+ticket.id+'-status' : ''}">Waiting</span>`;
+            if (isHistory) {
+                statusHtml = ticket.winAmount > 0 ? `<span class="status-badge win">+${ticket.winAmount.toFixed(2)}</span>` : `<span class="status-badge loss">Loss</span>`;
+            }
+            return `
+                <div class="ticket-item">
+                    <div class="ticket-top">
+                        <span>Ticket #${ticket.id}</span>
+                        <span style="color:white; font-size:13px;">Bet ${ticket.bet.toFixed(0)}</span>
+                    </div>
+                    <div class="ticket-slots">${slotsHtml}</div>
+                    <div class="ticket-bottom">
+                        <span style="color:var(--text-muted); font-size:11px;">${isHistory ? 'Matched: ' + ticket.matches : 'Hits: 0'}</span>
+                        ${statusHtml}
+                    </div>
+                </div>
+            `;
+        },
+
+        renderActiveTickets() {
+            const listEl = document.getElementById('tickets-list');
+            if (this.state.currentTickets.length === 0) {
+                listEl.innerHTML = '<div id="empty-tickets-msg">No tickets placed. Select numbers and tap BET.</div>'; 
+                return;
+            }
+            
+            const html = this.state.currentTickets.map(t => this.buildTicketHTML(t, false)).join('');
+            listEl.innerHTML = html;
+            
+            const appBody = document.getElementById('app-body');
+            appBody.scrollTop = appBody.scrollHeight;
+        },
+
+        renderHistory() {
+            const list = document.getElementById('history-list');
+            if (this.state.personalHistory.length === 0) {
+                list.innerHTML = '<div id="empty-history-msg">No history available.</div>'; return;
+            }
+            
+            let html = '';
+            this.state.personalHistory.forEach(round => {
+                html += `
+                    <div class="history-divider">
+                        <div class="line"></div>
+                        <div class="history-meta">
+                            <div style="color:var(--accent-green-light)">ID: ${round.id}</div>
+                            <div style="color:var(--text-muted); font-size:11px;">${round.date}</div>
+                        </div>
+                        <div class="line"></div>
+                    </div>
+                `;
+                html += round.tickets.map(t => this.buildTicketHTML(t, true, round.drawnNumbers)).join('');
+            });
+            list.innerHTML = html;
+        },
+
+        renderResults() {
+            const list = document.getElementById('results-list');
+            let html = '';
+            if (this.state.uiPhase === 'BETTING' || this.state.uiPhase === 'DRAWING') {
+                html += `
+                    <div class="result-row">
+                        <div class="result-id-col">✔️ <div style="color:var(--accent-green-light); font-weight:bold;">${this.state.serverRoundId}</div></div>
+                        <div class="combo-wait-box">WAITING...</div>
+                    </div>
+                `;
+            }
+            const resultsReversed = [...this.state.globalResults].reverse();
+            resultsReversed.forEach(res => {
+                let cells = res.numbers.map(n => `<div class="combo-cell">${n}</div>`).join('');
+                html += `
+                    <div class="result-row">
+                        <div class="result-id-col">✔️ <div style="color:var(--accent-green-light);">${res.id}</div></div>
+                        <div class="combo-grid">${cells}</div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        },
+
+        initStatsDOM() {
+            const list = document.getElementById('statistics-list');
+            let html = '';
+            for (let i = 1; i <= TOTAL_NUMBERS; i++) {
+                html += `
+                    <div class="stat-row">
+                        <div class="stat-num">${i}</div>
+                        <div class="stat-bar-track"><div class="stat-bar-fill" id="stat-bar-fill-${i}" style="width: 0%;"></div></div>
+                        <div class="stat-val" id="stat-val-${i}">0</div>
+                    </div>
+                `;
+            }
+            list.innerHTML = html;
+        },
+
+        renderStatistics() {
+            const vals = Object.values(this.state.statistics);
+            const maxCount = Math.max(...vals, 1);
+
+            for (let i = 1; i <= TOTAL_NUMBERS; i++) {
+                const count = this.state.statistics[i];
+                const percent = (count / maxCount) * 100;
+                
+                document.getElementById(`stat-bar-fill-\( {i}`).style.width = ` \){percent}%`;
+                document.getElementById(`stat-val-${i}`).textContent = count;
+            }
+        },
+
+        showBanner(msg) {
+            const banner = document.getElementById('msg-banner');
+            banner.textContent = msg; banner.style.opacity = '1';
+            setTimeout(() => banner.style.opacity = '0', 2000);
+        },
+
+        attachEventListeners() {
+            document.querySelectorAll('.btn-adjust-bet').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (this.state.uiPhase !== 'BETTING') return;
+                    const action = e.target.dataset.action;
+                    if (action === 'minus' && this.state.betAmount > 0.5) this.state.betAmount -= 0.5;
+                    if (action === 'plus') this.state.betAmount += 0.5;
+                    if (action === 'x2') this.state.betAmount *= 2;
+                    if (action === 'max') this.state.betAmount = this.state.balance > 0 ? this.state.balance : 2;
+                    if (this.state.betAmount > this.state.balance && this.state.balance > 0) this.state.betAmount = this.state.balance;
+                    if (this.state.betAmount <= 0) this.state.betAmount = 0.5;
+                    this.updateUI();
+                });
+            });
+            document.getElementById('btn-bet').addEventListener('click', () => this.placeBet());
+        }
+    };
+
+    window.switchTab = function(tabName) {
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        
+        if (tabName === 'game') { document.querySelectorAll('.nav-item')[0].classList.add('active'); document.getElementById('tab-game').classList.add('active'); FrontendApp.renderActiveTickets(); }
+        if (tabName === 'history') { document.querySelectorAll('.nav-item')[1].classList.add('active'); document.getElementById('tab-history').classList.add('active'); FrontendApp.renderHistory(); }
+        if (tabName === 'results') { document.querySelectorAll('.nav-item')[2].classList.add('active'); document.getElementById('tab-results').classList.add('active'); FrontendApp.renderResults(); }
+        if (tabName === 'statistics') { document.querySelectorAll('.nav-item')[3].classList.add('active'); document.getElementById('tab-statistics').classList.add('active'); FrontendApp.renderStatistics(); }
+    };
+
+    // + button → go to landing page for deposit
+    window.goToLandingPage = function() {
+        window.location.href = 'index.html';   // change if your landing file has another name
+    };
+
+    window.requestBalanceSync = function() {
+        APIManager.requestBalance();
+        FrontendApp.showBanner("Refreshing balance...");
+    };
+
+    FrontendApp.init();
+</script>
+</body>
+</html>
