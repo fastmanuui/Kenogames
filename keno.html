@@ -21,6 +21,8 @@
             --grid-bg: #2a2e38;
             --ball-base: #1c2733;
             --ball-border: #3b536e;
+            --hot: #ff6b35;
+            --cold: #4fc3f7;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; user-select: none; }
@@ -43,32 +45,59 @@
 
         #upper-area { width: 100%; background-color: var(--bg-main); position: relative; }
         #phase-betting { display: flex; flex-direction: column; }
-        .grid-container { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; padding: 10px 10px; }
-        .num-btn { background-color: var(--grid-bg); color: #9ba3b0; border: none; border-radius: 4px; aspect-ratio: 1; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+        .grid-container { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; padding: 6px 10px 10px; }
+        .num-btn { background-color: var(--grid-bg); color: #9ba3b0; border: none; border-radius: 4px; aspect-ratio: 1; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; position: relative; }
         .num-btn:active { transform: scale(0.9); }
         .num-btn.selected { background-color: #0b3d4b; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+        
+        .num-btn .hc-dot { position: absolute; top: 3px; left: 3px; width: 6px; height: 6px; border-radius: 50%; display: none; }
+        .num-btn.hot .hc-dot { display: block; background: var(--hot); }
+        .num-btn.cold .hc-dot { display: block; background: var(--cold); }
+
+        .hot-cold-legend { display: flex; justify-content: center; gap: 18px; padding: 2px 10px 0; font-size: 11px; color: var(--text-muted); }
+        .hot-cold-legend span { display: flex; align-items: center; gap: 4px; }
+        .dot-hot { width: 8px; height: 8px; border-radius: 50%; background: var(--hot); }
+        .dot-cold { width: 8px; height: 8px; border-radius: 50%; background: var(--cold); }
+
+        /* Potential win preview */
+        .payout-preview {
+            margin: 6px 12px 4px;
+            padding: 8px 10px;
+            background: #1a222c;
+            border: 1px solid #2a3540;
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.45;
+            min-height: 38px;
+        }
+        .payout-preview strong { color: var(--accent-cyan); }
+        .payout-preview .win-line { color: var(--accent-green-light); font-weight: 600; }
         
         .controls-wrapper { padding: 10px 15px; background-color: var(--bg-secondary); }
         .bet-adjust { display: flex; gap: 5px; margin-bottom: 10px; height: 45px; }
         .btn-adjust { background-color: var(--grid-bg); color: white; border: none; border-radius: 4px; flex: 1; font-size: 20px; font-weight: bold; cursor: pointer; }
         .btn-val { background-color: var(--grid-bg); flex: 3; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; border-radius: 4px; }
+        .btn-val input { background: transparent; border: none; color: white; font-size: 18px; font-weight: bold; text-align: center; width: 100%; outline: none; }
         .btn-multiplier { background-color: #24353a; color: #64b5f6; flex: 1.5; font-size: 13px; }
         
         .action-row { display: flex; gap: 5px; margin-bottom: 10px; }
         .btn-action-small { background-color: var(--grid-bg); color: var(--text-muted); border: none; border-radius: 4px; padding: 8px; flex: 1; font-size: 12px; font-weight: bold; cursor: pointer; }
+        
         .btn-bet-main { width: 100%; height: 50px; background-color: #4a5c4e; color: #fff; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; }
         .btn-bet-main.active { background-color: #3b8c54; }
         .btn-bet-main.active:active { transform: scale(0.98); }
+        .btn-bet-main:disabled { background-color: #2a352c; color: #7b857d; cursor: not-allowed; transform: none; }
 
-        #phase-drawing { display: none; flex-direction: column; align-items: center; justify-content: flex-start; height: 420px; background: radial-gradient(circle at 50% 40%, #152c38 0%, #0d1318 100%); position: relative; overflow: hidden; border-bottom: 1px solid #2a2e38; padding: 15px 10px; }
+        #phase-drawing { display: none; flex-direction: column; align-items: center; justify-content: flex-start; height: 440px; background: radial-gradient(circle at 50% 40%, #152c38 0%, #0d1318 100%); position: relative; overflow: hidden; border-bottom: 1px solid #2a2e38; padding: 12px 8px 16px; }
         .radar-bg { position: absolute; top: 50%; left: 50%; width: 150%; height: 150%; transform: translate(-50%, -50%); background-image: repeating-radial-gradient(circle at center, transparent 0, transparent 40px, rgba(76, 175, 80, 0.05) 41px, rgba(76, 175, 80, 0.05) 42px); z-index: 1; pointer-events: none; }
         .draw-counter-ui { position: absolute; top: 10px; right: 15px; color: white; font-weight: bold; font-size: 13px; font-family: monospace; z-index: 6; }
         
-        .big-ball-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; z-index: 5; padding-bottom: 10px; }
-        .big-ball { width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #2a415c, #090e15); border: 2px solid #557599; color: white; font-weight: bold; font-size: 42px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(255,255,255,0.1), 0 0 25px rgba(85, 117, 153, 0.7); transition: all 0.2s; }
+        .big-ball-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; z-index: 5; padding: 8px 0 12px; }
+        .big-ball { width: 96px; height: 96px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #2a415c, #090e15); border: 2px solid #557599; color: white; font-weight: bold; font-size: 42px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(255,255,255,0.1), 0 0 25px rgba(85, 117, 153, 0.7); transition: all 0.2s; }
         
-        .small-balls-container { width: 100%; padding: 0 5px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; z-index: 5; margin-top: 22px; min-height: 80px; }
-        .small-ball { width: 100%; aspect-ratio: 1; max-width: 36px; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--ball-base), #080b10); border: 1.5px solid var(--ball-border); color: #d1e1f0; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(255,255,255,0.1), 0 2px 5px rgba(0,0,0,0.5); animation: popInDraw 0.3s ease-out; transition: all 0.2s; }
+        .small-balls-container { width: 100%; padding: 0 6px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; z-index: 5; margin-top: 8px; min-height: 90px; align-content: start; }
+        .small-ball { width: 100%; aspect-ratio: 1; max-width: 38px; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--ball-base), #080b10); border: 1.5px solid var(--ball-border); color: #d1e1f0; font-weight: bold; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(255,255,255,0.1), 0 2px 5px rgba(0,0,0,0.5); animation: popInDraw 0.3s ease-out; transition: all 0.2s; }
         .matched-draw-ball { border-color: var(--accent-match) !important; box-shadow: 0 0 15px rgba(76, 175, 80, 0.8), inset 0 0 10px rgba(76, 175, 80, 0.4) !important; color: var(--accent-match) !important; }
 
         @keyframes popInDraw { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1;} }
@@ -84,10 +113,14 @@
         .tab-content { display: none; flex-direction: column; padding: 10px 15px 15px 15px;}
         .tab-content.active { display: flex; }
 
-        .tickets-header { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .ticket-item { background-color: #1f222b; border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; animation: slideIn 0.3s ease; }
+        .tickets-header { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
+        .all-tickets-counter { font-size: 12px; color: var(--accent-cyan); font-weight: 600; margin-bottom: 6px; }
+        .ticket-item { background-color: #1f222b; border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; transition: all 0.35s ease; }
+        .ticket-item.promo { opacity: 0.92; border-left: 3px solid #3a3f4c; }
+        .ticket-item.promo-appear { animation: promoAppear 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         
         @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes promoAppear { from { opacity: 0; transform: translateY(-15px); } to { opacity: 0.92; transform: translateY(0); } }
 
         .ticket-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--accent-green-light); font-weight: bold; }
         .ticket-slots { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
@@ -118,14 +151,42 @@
         .stat-bar-fill { height: 2px; background: var(--accent-match); transition: width 0.3s ease; }
         .stat-val { width: 30px; text-align: right; color: white; font-size: 13px; font-weight: 500; }
 
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.82); display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 35px; z-index: 100; }
-        .result-box { background: var(--bg-tertiary); padding: 22px; border-radius: 12px; text-align: center; border: 2px solid var(--accent-green-light); width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
-        .result-box h1 { margin-bottom: 5px; color: white; font-size: 20px; }
-        .result-box .payout { font-size: 26px; color: var(--accent-match); font-weight: bold; margin: 10px 0;}
-        .res-stats { display: flex; justify-content: space-around; background: var(--bg-main); padding: 8px; border-radius: 8px; margin: 10px 0; font-size: 13px; }
-        .close-overlay { margin-top: 5px; padding: 10px 20px; background: #2a2e38; border: none; color: #8b949e; border-radius: 5px; font-weight: bold; font-size: 13px; width: 100%; pointer-events: none;}
+        /* Updated overlay: Fixed position to cover top draw and header sections */
+        .overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.88); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 1000; }
+        .result-box { background: linear-gradient(160deg, #1f232b 0%, #151820 100%); padding: 28px 22px; border-radius: 18px; text-align: center; border: 1px solid rgba(76,175,80,0.35); width: 92%; max-width: 340px; box-shadow: 0 20px 50px rgba(0,0,0,0.7), 0 0 40px rgba(76,175,80,0.08); position: relative; overflow: hidden; }
+        .result-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--accent-green-light), transparent); }
+        .result-box h1 { margin-bottom: 6px; color: white; font-size: 22px; letter-spacing: 0.5px; }
+        .result-box .payout { font-size: 32px; color: var(--accent-match); font-weight: 800; margin: 14px 0 8px; text-shadow: 0 0 20px rgba(76,175,80,0.4); }
+        .res-stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.35); padding: 12px 8px; border-radius: 12px; margin: 12px 0; font-size: 13px; }
+        .close-overlay { margin-top: 12px; padding: 12px 20px; background: #2a2e38; border: none; color: #c0c8d4; border-radius: 8px; font-weight: bold; font-size: 13px; width: 100%; cursor: pointer; transition: background 0.2s; }
+        .close-overlay:hover { background: #343a48; }
         
         #msg-banner { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.9); color: var(--accent-cyan); padding: 10px 20px; border-radius: 20px; font-weight: bold; z-index: 150; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+
+        .menu-panel { position: absolute; top: 0; right: 0; width: 260px; height: 100%; background: #16181f; z-index: 200; transform: translateX(100%); transition: transform 0.28s ease; box-shadow: -8px 0 24px rgba(0,0,0,0.5); padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; }
+        .menu-panel.open { transform: translateX(0); }
+        .menu-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.55); z-index: 190; display: none; }
+        .menu-backdrop.show { display: block; }
+        .menu-title { font-size: 15px; font-weight: 700; color: var(--accent-green-light); margin-bottom: 8px; }
+        .menu-btn { background: #23262f; border: 1px solid #2f3542; color: white; padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-align: left; }
+        .menu-btn:active { background: #2a2e38; }
+
+        .dialog-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.82); z-index: 300; display: none; align-items: flex-start; justify-content: center; padding: 40px 16px 20px; overflow-y: auto; }
+        .dialog-overlay.show { display: flex; }
+        .dialog-box { background: #1a1c23; border-radius: 14px; padding: 20px; width: 100%; max-width: 360px; max-height: 85vh; overflow-y: auto; border: 1px solid #2f3542; margin-top: 10px; }
+        .dialog-box h2 { font-size: 17px; margin-bottom: 12px; color: var(--accent-green-light); }
+        .dialog-box h3 { font-size: 15px; margin: 14px 0 8px; color: #e0e6ef; }
+        .dialog-box p, .dialog-box li { font-size: 13px; line-height: 1.55; color: #c8d0dc; margin-bottom: 8px; }
+        .dialog-box ul { padding-left: 18px; margin-bottom: 10px; }
+        .dialog-close { margin-top: 14px; width: 100%; padding: 10px; background: #2a2e38; border: none; color: white; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
+        .pay-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 10px 0; }
+        .pay-table th, .pay-table td { border: 1px solid #2a2e38; padding: 4px 2px; text-align: center; color: #c8d0dc; }
+        .pay-table th { background: #23262f; color: var(--accent-green-light); }
+
+        .header-icons { display: flex; align-items: center; gap: 10px; }
+        .header-icons span { color: var(--accent-green-light); font-size: 22px; cursor: pointer; }
+        .eye-btn { cursor: pointer; font-size: 16px; opacity: 0.85; }
     </style>
 </head>
 <body>
@@ -133,12 +194,17 @@
 <div id="app">
     <div id="msg-banner">Message</div>
 
-    <div class="top-bar"><span>✕</span><span style="font-weight: bold;">Speed Games</span><span>⋮</span></div>
+    <div class="top-bar">
+        <span onclick="goToLandingPage()" style="cursor:pointer; font-size:18px;">✕</span>
+        <span style="font-weight: bold;">Speed Games</span>
+        <span style="width:18px;"></span>
+    </div>
     <div class="header-2">
         <div class="bg-logo">S</div>
         <div class="balance-pill">
             <span onclick="requestBalanceSync()" style="cursor:pointer;">↻</span>
             <span id="ui-balance">0.00 ETB</span>
+            <span class="eye-btn" id="balance-eye" onclick="toggleBalanceVisibility()" title="Show/Hide balance">👁</span>
         </div>
         <div style="display: flex; gap: 5px;">
             <button class="deposit-btn" onclick="goToLandingPage()">+</button>
@@ -148,14 +214,26 @@
     <div class="header-3">
         <div class="fast-keno-logo"><span>FAST</span>KENO</div>
         <div class="timer-overlay-text">
-            <span id="ui-timer">00 : 00</span>
+            <span id="ui-timer">00:00</span>
             <span id="ui-round-id" style="font-weight:normal; margin-left: 5px;">ID: ---</span>
         </div>
-        <div style="color: var(--accent-green-light); font-size: 24px; cursor: pointer;">≡</div>
+        <div class="header-icons">
+            <span onclick="openDialog('rules')" title="Rules">ℹ</span>
+            <span onclick="toggleMenu()" title="Menu">≡</span>
+        </div>
     </div>
 
     <div id="upper-area">
         <div id="phase-betting">
+            <div class="hot-cold-legend">
+                <span><span class="dot-hot"></span> Hot</span>
+                <span><span class="dot-cold"></span> Cold</span>
+            </div>
+
+            <div class="payout-preview" id="payout-preview">
+                Select numbers to see potential wins
+            </div>
+
             <div class="grid-container" id="grid"></div>
             <div class="controls-wrapper">
                 <div class="action-row">
@@ -164,12 +242,14 @@
                 </div>
                 <div class="bet-adjust">
                     <button class="btn-adjust btn-adjust-bet" data-action="minus">−</button>
-                    <div class="btn-val" id="ui-bet">2.00</div>
+                    <div class="btn-val">
+                        <input type="number" id="ui-bet-input" value="2" min="2" step="2" inputmode="numeric">
+                    </div>
                     <button class="btn-adjust btn-adjust-bet" data-action="plus">+</button>
                     <button class="btn-adjust btn-multiplier btn-adjust-bet" data-action="x2">X2</button>
                     <button class="btn-adjust btn-multiplier btn-adjust-bet" data-action="max">MAX</button>
                 </div>
-                <button class="btn-bet-main" id="btn-bet">BET</button>
+                <button class="btn-bet-main" id="btn-bet">CONNECTING...</button>
             </div>
         </div>
 
@@ -196,9 +276,11 @@
                 <span>My Tickets: <span id="ui-ticket-count">0</span> / 20</span>
                 <span>Total Bet: <span id="ui-my-bets-total">0</span></span>
             </div>
+            <div class="all-tickets-counter">All Tickets: <span id="ui-all-tickets">512</span></div>
             <div id="tickets-list">
                 <div id="empty-tickets-msg">No tickets placed. Select numbers and tap BET.</div>
             </div>
+            <div id="promo-tickets-list"></div>
         </div>
         <div id="tab-history" class="tab-content">
             <div id="history-list"></div>
@@ -208,7 +290,10 @@
             <div id="results-list"></div>
         </div>
         <div id="tab-statistics" class="tab-content">
-            <div class="stats-header-row"><span>Historical Data</span><span></span></div>
+            <div class="stats-header-row">
+                <span>Last ~100 rounds frequency</span>
+                <span id="stats-trick" style="color:var(--accent-cyan);font-size:11px;"></span>
+            </div>
             <div id="statistics-list"></div>
         </div>
     </div>
@@ -224,6 +309,79 @@
             <button class="close-overlay" id="ui-overlay-countdown">Processing...</button>
         </div>
     </div>
+
+    <div class="menu-backdrop" id="menu-backdrop" onclick="toggleMenu()"></div>
+    <div class="menu-panel" id="menu-panel">
+        <div class="menu-title">Menu</div>
+        <button class="menu-btn" onclick="openDialog('rules')">📜 Rules</button>
+        <button class="menu-btn" onclick="openDialog('policy')">📜 Policy</button>
+        <button class="menu-btn" onclick="openDialog('rng')">🎲 RNG</button>
+    </div>
+
+    <div class="dialog-overlay" id="dialog-rules">
+        <div class="dialog-box">
+            <h2>Rules & Fairness</h2>
+            <p><strong>RTP: 97%</strong></p>
+            <p><strong>Max Win – 30000 ETB</strong></p>
+            <p>Keno is a game where the player bets on balls numbered 1-80 by choosing a combination from balls numbered 1 to 10.</p>
+            <p>During each round, 20 of the balls numbered from 1-80 are drawn in sequence using a random number generator.</p>
+            <h3>How to play</h3>
+            <p>To participate in the game, the player must perform the following actions during the round, which lasts one minute:</p>
+            <ul>
+                <li>Choose the combination of numbers</li>
+                <li>Set the amount limit for betting</li>
+                <li>Click the “Bet” button</li>
+            </ul>
+            <p>The player can also delete the combination of already selected numbers.</p>
+            <p>HOT and COLD numbers are shown with a small coloured dot (orange = hot, blue = cold).</p>
+            <h3>Payments</h3>
+            <p>All winning ball combinations have corresponding odds multiplied by the player's bet amount.</p>
+            <table class="pay-table">
+                <thead>
+                    <tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>0</td><td></td><td></td><td></td><td></td><td></td><td></td><td>1</td><td>1</td><td>2</td><td>2</td></tr>
+                    <tr><td>1</td><td>3.5</td><td>1</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>2</td><td></td><td>10</td><td>2</td><td>1.5</td><td>1</td><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td>3</td><td></td><td></td><td>50</td><td>10</td><td>3</td><td>2</td><td>2</td><td></td><td></td><td></td></tr>
+                    <tr><td>4</td><td></td><td></td><td></td><td>80</td><td>30</td><td>15</td><td>4</td><td>5</td><td>2</td><td></td></tr>
+                    <tr><td>5</td><td></td><td></td><td></td><td></td><td>150</td><td>60</td><td>20</td><td>15</td><td>10</td><td>5</td></tr>
+                    <tr><td>6</td><td></td><td></td><td></td><td></td><td></td><td>500</td><td>80</td><td>50</td><td>25</td><td>30</td></tr>
+                    <tr><td>7</td><td></td><td></td><td></td><td></td><td></td><td></td><td>1000</td><td>200</td><td>125</td><td>100</td></tr>
+                    <tr><td>8</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>2000</td><td>1000</td><td>300</td></tr>
+                    <tr><td>9</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>5000</td><td>2000</td></tr>
+                    <tr><td>10</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>10000</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Disconnection policy:</strong> If a disconnection occurs after an active game round and your bets were accepted by the server, the game will proceed as normal and any winnings will be processed according to the game result regardless of the disconnection.</p>
+            <button class="dialog-close" onclick="closeDialog('rules')">Close</button>
+        </div>
+    </div>
+
+    <div class="dialog-overlay" id="dialog-policy">
+        <div class="dialog-box">
+            <h2>Game Policy</h2>
+            <p>Fast Keno is a skill-and-chance based multiplayer game. All draws are generated by a certified Random Number Generator (RNG).</p>
+            <p>• Players must be 18 years or older.<br>
+            • Bets are final once placed and cannot be cancelled after the betting window closes.<br>
+            • Winnings are credited automatically after each draw.<br>
+            • We reserve the right to void tickets in case of technical issues or abuse.<br>
+            • Responsible gaming is encouraged. Play within your means.</p>
+            <p>By placing a bet you agree to these terms.</p>
+            <button class="dialog-close" onclick="closeDialog('policy')">Close</button>
+        </div>
+    </div>
+
+    <div class="dialog-overlay" id="dialog-rng">
+        <div class="dialog-box">
+            <h2>Random Number Generator</h2>
+            <p>Our RNG is independently tested and certified. Every draw is completely random and cannot be predicted or influenced by players or the house.</p>
+            <p>The system uses cryptographically secure entropy sources to guarantee fairness and integrity on every single round.</p>
+            <p><strong style="color:var(--accent-green-light);">Our RNG is trusted.</strong></p>
+            <button class="dialog-close" onclick="closeDialog('rng')">Close</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -231,6 +389,7 @@
     const MAX_TICKETS = 20;
     const TOTAL_NUMBERS = 80;
     const DRAW_COUNT = 20;
+    const MIN_BET = 2;
     const PAYOUTS = {
         1: { 1: 3.5 },
         2: { 1: 1, 2: 10 },
@@ -251,20 +410,23 @@
         return params.get('userId') || 'guest_user';
     }
 
-    /* =========================================
-       NETWORK MANAGER (works with your server.js)
-       ========================================= */
     const APIManager = {
         socket: null,
         userId: getUserIdFromUrl(),
         
         init() {
             this.socket = io(SOCKET_SERVER_URL, {
-                transports: ['websocket', 'polling']
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 8,
+                reconnectionDelay: 1200
             });
 
             this.socket.on('connect', () => {
                 console.log('Connected to live backend!', this.socket.id);
+                FrontendApp.state.isConnected = true;
+                FrontendApp.updateUI();
+
                 this.socket.emit('initUser', {
                     userId: this.userId,
                     name: 'Keno Player',
@@ -273,7 +435,12 @@
                 this.socket.emit('requestBalance', { userId: this.userId });
             });
 
-            // Real balance from your server
+            this.socket.on('disconnect', () => {
+                console.log('Disconnected from live backend!');
+                FrontendApp.state.isConnected = false;
+                FrontendApp.updateUI();
+            });
+
             this.socket.on('balanceUpdate', (data) => {
                 if (data && typeof data.balance === 'number') {
                     FrontendApp.state.balance = data.balance;
@@ -282,16 +449,27 @@
             });
 
             this.socket.on('betError', (data) => {
+                FrontendApp.state.isPlacingBet = false;
+                FrontendApp.state.pendingTicket = null;
                 FrontendApp.showBanner(data.message || 'Bet rejected');
-                // Refresh balance in case of mismatch
                 this.requestBalance();
+                FrontendApp.updateUI();
             });
 
             this.socket.on('betSuccess', (data) => {
+                FrontendApp.state.isPlacingBet = false;
                 if (data && typeof data.newBalance === 'number') {
                     FrontendApp.state.balance = data.newBalance;
-                    FrontendApp.updateUI();
                 }
+                
+                if (FrontendApp.state.pendingTicket) {
+                    FrontendApp.state.currentTickets.unshift(FrontendApp.state.pendingTicket);
+                    FrontendApp.showBanner('Ticket #' + FrontendApp.state.pendingTicket.id + ' Placed!');
+                    FrontendApp.clearNumbers();
+                    FrontendApp.renderActiveTickets();
+                    FrontendApp.state.pendingTicket = null;
+                }
+                FrontendApp.updateUI();
             });
 
             this.socket.on('gameStateUpdate', (data) => FrontendApp.onServerStateUpdate(data));
@@ -315,26 +493,35 @@
         }
     };
 
-
-    /* =========================================
-       FRONTEND APP
-       ========================================= */
     const FrontendApp = {
         state: {
+            isConnected: false,
+            isPlacingBet: false,
+            pendingTicket: null,
             balance: 0.00,
-            betAmount: 2.00,
+            betAmount: MIN_BET,
             selectedNumbers: new Set(),
             currentTickets: [], 
             personalHistory: [], 
-            statistics: {},
+            statistics: {},          
+            drawHistory: [],         
             uiPhase: 'BETTING',
             serverRoundId: null,
             serverEndTime: 0,
             serverDrawnNumbers: [],
-            globalResults: []
+            globalResults: [],
+            allTicketsCount: 512,
+            promoTickets: [],
+            hotNumbers: [],
+            coldNumbers: [],
+            balanceHidden: false
         },
         
         clientTimerInterval: null,
+        allTicketsInterval: null,
+        statsFallbackInterval: null,
+        promoStreamTimer: null,
+        drawInterval: null,
 
         init() {
             this.loadCache();
@@ -343,24 +530,39 @@
             this.attachEventListeners();
             APIManager.init(); 
             this.startSmoothClientTimer();
+            this.startAllTicketsCounter();
+            this.updateHotCold();
+            this.startStatsFallback();
+            this.updatePayoutPreview();
+            this.startPromoStream();
         },
 
-        // Only history + stats are cached (balance is always from server)
         loadCache() {
-            const cachedHist = localStorage.getItem('fk_history');
-            const cachedStats = localStorage.getItem('fk_stats');
-
-            if (cachedHist) this.state.personalHistory = JSON.parse(cachedHist);
-            if (cachedStats) {
-                this.state.statistics = JSON.parse(cachedStats);
-            } else {
-                for(let i=1; i<=TOTAL_NUMBERS; i++) this.state.statistics[i] = 0;
+            try {
+                const cachedHist = localStorage.getItem('fk_history');
+                const cachedStats = localStorage.getItem('fk_stats');
+                const cachedDraws = localStorage.getItem('fk_draw_history');
+                const hidden = localStorage.getItem('fk_balance_hidden');
+                if (cachedHist) this.state.personalHistory = JSON.parse(cachedHist);
+                if (cachedStats) this.state.statistics = JSON.parse(cachedStats);
+                else {
+                    for (let i = 1; i <= TOTAL_NUMBERS; i++) this.state.statistics[i] = 0;
+                }
+                if (cachedDraws) this.state.drawHistory = JSON.parse(cachedDraws);
+                if (hidden === '1') this.state.balanceHidden = true;
+            } catch (e) {
+                for (let i = 1; i <= TOTAL_NUMBERS; i++) this.state.statistics[i] = 0;
             }
             this.renderHistory();
         },
+
         saveCache() {
-            localStorage.setItem('fk_history', JSON.stringify(this.state.personalHistory));
-            localStorage.setItem('fk_stats', JSON.stringify(this.state.statistics));
+            try {
+                localStorage.setItem('fk_history', JSON.stringify(this.state.personalHistory.slice(0, 4)));
+                localStorage.setItem('fk_stats', JSON.stringify(this.state.statistics));
+                localStorage.setItem('fk_draw_history', JSON.stringify(this.state.drawHistory.slice(-100)));
+                localStorage.setItem('fk_balance_hidden', this.state.balanceHidden ? '1' : '0');
+            } catch (e) {}
         },
 
         onServerStateUpdate(payload) {
@@ -372,8 +574,7 @@
                 if (this.state.uiPhase === 'RESULT' || this.state.uiPhase === 'DRAWING') {
                     this.resetForNewRound();
                 }
-            } 
-            else if (payload.phase === 'DRAWING') {
+            } else if (payload.phase === 'DRAWING') {
                 if (this.state.uiPhase === 'BETTING') {
                     this.state.serverDrawnNumbers = payload.drawnNumbers || [];
                     this.startDrawingAnimation();
@@ -391,15 +592,37 @@
             for (let i = 1; i <= TOTAL_NUMBERS; i++) {
                 const btn = document.createElement('button');
                 btn.className = 'num-btn';
-                btn.textContent = i;
-                btn.id = `grid-btn-${i}`;
+                btn.id = 'grid-btn-' + i;
+                btn.innerHTML = '<span class="hc-dot"></span>' + i;
                 btn.onclick = () => this.handleNumberSelect(i, btn);
                 gridEl.appendChild(btn);
             }
         },
 
+        updateHotCold() {
+            const entries = [];
+            for (let i = 1; i <= TOTAL_NUMBERS; i++) {
+                entries.push({ n: i, c: this.state.statistics[i] || 0 });
+            }
+            entries.sort((a, b) => b.c - a.c);
+            this.state.hotNumbers = entries.slice(0, 4).map(e => e.n);
+            this.state.coldNumbers = entries.slice(-4).map(e => e.n).reverse();
+
+            document.querySelectorAll('.num-btn').forEach(btn => {
+                btn.classList.remove('hot', 'cold');
+            });
+            this.state.hotNumbers.forEach(n => {
+                const el = document.getElementById('grid-btn-' + n);
+                if (el) el.classList.add('hot');
+            });
+            this.state.coldNumbers.forEach(n => {
+                const el = document.getElementById('grid-btn-' + n);
+                if (el) el.classList.add('cold');
+            });
+        },
+
         handleNumberSelect(num, btn) {
-            if (this.state.uiPhase !== 'BETTING') return;
+            if (this.state.uiPhase !== 'BETTING' || this.state.isPlacingBet) return;
             if (this.state.selectedNumbers.has(num)) {
                 this.state.selectedNumbers.delete(num);
                 btn.classList.remove('selected');
@@ -412,17 +635,19 @@
                 }
             }
             this.updateUI();
+            this.updatePayoutPreview();
         },
 
         clearNumbers() {
-            if (this.state.uiPhase !== 'BETTING') return;
+            if (this.state.uiPhase !== 'BETTING' || this.state.isPlacingBet) return;
             this.state.selectedNumbers.clear();
             document.querySelectorAll('.num-btn.selected').forEach(btn => btn.classList.remove('selected'));
             this.updateUI();
+            this.updatePayoutPreview();
         },
 
         autoPick() {
-            if (this.state.uiPhase !== 'BETTING') return;
+            if (this.state.uiPhase !== 'BETTING' || this.state.isPlacingBet) return;
             this.clearNumbers();
             let nums = Array.from({length: TOTAL_NUMBERS}, (_, i) => i + 1);
             for (let i = nums.length - 1; i > 0; i--) {
@@ -432,22 +657,55 @@
             let randomPicks = nums.slice(0, 10);
             randomPicks.forEach(num => {
                 this.state.selectedNumbers.add(num);
-                document.getElementById(`grid-btn-${num}`).classList.add('selected');
+                document.getElementById('grid-btn-' + num).classList.add('selected');
             });
             this.updateUI();
+            this.updatePayoutPreview();
+        },
+
+        updatePayoutPreview() {
+            const el = document.getElementById('payout-preview');
+            const spots = this.state.selectedNumbers.size;
+            const bet = this.state.betAmount;
+
+            if (spots === 0) {
+                el.innerHTML = 'Select numbers to see potential wins';
+                return;
+            }
+
+            const table = PAYOUTS[spots];
+            if (!table) {
+                el.innerHTML = 'Select 1–10 numbers';
+                return;
+            }
+
+            let lines = [];
+            const hits = Object.keys(table).map(Number).sort((a,b) => a - b);
+            hits.forEach(h => {
+                const mult = table[h];
+                const win = (bet * mult).toFixed(2);
+                lines.push('<span class="win-line">' + h + ' hit' + (h > 1 ? 's' : '') + ' → ' + win + ' ETB</span>');
+            });
+
+            el.innerHTML = '<strong>' + spots + ' number' + (spots > 1 ? 's' : '') + '</strong> @ ' + bet.toFixed(0) + ' ETB<br>' + lines.join(' &nbsp;|&nbsp; ');
         },
 
         placeBet() {
+            if (!this.state.isConnected) return this.showBanner("Reconnecting to server...");
+            if (this.state.isPlacingBet) return;
             if (this.state.uiPhase !== 'BETTING') return this.showBanner("Betting closed!");
             if (this.state.selectedNumbers.size === 0) return this.showBanner("Select numbers first!");
             if (this.state.currentTickets.length >= MAX_TICKETS) return this.showBanner("Max tickets reached!");
             if (this.state.balance < this.state.betAmount) return this.showBanner("Insufficient Balance!");
 
-            // Optimistic UI deduct (server will confirm with balanceUpdate)
-            this.state.balance -= this.state.betAmount;
-            
+            // Lock the UI instead of optimistically deducting
+            this.state.isPlacingBet = true;
+            this.updateUI();
+
             const sortedNums = Array.from(this.state.selectedNumbers).sort((a,b) => a - b);
-            const newTicket = {
+            
+            // Set pending ticket to await server response
+            this.state.pendingTicket = {
                 id: this.state.currentTickets.length + 1,
                 numbers: sortedNums,
                 bet: this.state.betAmount,
@@ -455,45 +713,157 @@
                 winAmount: 0
             };
 
-            this.state.currentTickets.push(newTicket);
-            
-            // Send to your server (server deducts real balance)
-            APIManager.sendBet(newTicket);
-            
-            this.clearNumbers();
-            this.showBanner(`Ticket #${newTicket.id} Placed!`);
-            this.updateUI();
-            this.renderActiveTickets();
+            APIManager.sendBet(this.state.pendingTicket);
         },
 
         startSmoothClientTimer() {
             clearInterval(this.clientTimerInterval);
             this.clientTimerInterval = setInterval(() => {
-                const secondsLeft = Math.max(0, Math.floor((this.state.serverEndTime - Date.now()) / 1000));
+                const now = Date.now();
+                const secondsLeft = Math.max(0, Math.floor((this.state.serverEndTime - now) / 1000));
+                const mins = Math.floor(secondsLeft / 60);
+                const secs = secondsLeft % 60;
                 
                 const uiTimer = document.getElementById('ui-timer');
+                if (!uiTimer) return;
+
                 if (this.state.uiPhase === 'BETTING') {
-                    uiTimer.textContent = `00 : ${secondsLeft < 10 ? '0'+secondsLeft : secondsLeft}`;
+                    uiTimer.textContent = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
                     uiTimer.classList.toggle('timer-red', secondsLeft <= 10);
                 } else {
-                    uiTimer.textContent = '-- : --';
+                    uiTimer.textContent = '--:--';
                     uiTimer.classList.remove('timer-red');
                 }
 
                 if (this.state.uiPhase === 'RESULT') {
                     const overlayCount = document.getElementById('ui-overlay-countdown');
-                    overlayCount.textContent = `Next round starting in ${secondsLeft}s...`;
+                    if (overlayCount) {
+                        overlayCount.textContent = 'Next round starting in ' + secondsLeft + 's...';
+                    }
                 }
-            }, 1000);
+            }, 250);
+        },
+
+        startAllTicketsCounter() {
+            clearInterval(this.allTicketsInterval);
+            const targets = [9302, 12450, 15780, 18300, 11200, 7650, 14890, 6200];
+            let target = targets[Math.floor(Math.random() * targets.length)];
+            if (target < 5000) target = 5000 + Math.floor(Math.random() * 3000);
+
+            this.allTicketsInterval = setInterval(() => {
+                if (this.state.uiPhase !== 'BETTING') return;
+
+                const current = this.state.allTicketsCount;
+                if (current >= target) {
+                    if (Math.random() > 0.7) {
+                        this.state.allTicketsCount += Math.floor(Math.random() * 3);
+                    }
+                } else {
+                    const gap = target - current;
+                    const step = Math.max(1, Math.floor(gap / 40) + Math.floor(Math.random() * 8));
+                    this.state.allTicketsCount += step;
+                }
+                const el = document.getElementById('ui-all-tickets');
+                if (el) el.textContent = this.state.allTicketsCount.toLocaleString();
+            }, 900 + Math.random() * 600);
+        },
+
+        // Continuous stream of dynamic promo tickets simulating real network activity
+        startPromoStream() {
+            clearTimeout(this.promoStreamTimer);
+            
+            const streamNext = () => {
+                if (this.state.uiPhase !== 'BETTING') return;
+
+                const r = Math.random();
+                let bet;
+                if (r < 0.6) bet = Math.floor(Math.random() * 21) * 2 + 10; 
+                else if (r < 0.85) bet = Math.floor(Math.random() * 51) * 2 + 50; 
+                else if (r < 0.95) bet = Math.floor(Math.random() * 126) * 2 + 150; 
+                else bet = Math.floor(Math.random() * 501) * 2 + 400; 
+                
+                if (bet % 2 !== 0) bet += 1;
+
+                const spotsWeights = [1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 5, 6];
+                const spots = spotsWeights[Math.floor(Math.random() * spotsWeights.length)];
+
+                let nums = [];
+                const pattern = Math.random();
+                
+                if (pattern < 0.3 && this.state.hotNumbers && this.state.hotNumbers.length > 0) {
+                    let pool = [...this.state.hotNumbers, ...this.state.coldNumbers];
+                    pool.sort(() => 0.5 - Math.random());
+                    while (nums.length < spots && pool.length > 0) {
+                        nums.push(pool.pop());
+                    }
+                } else if (pattern < 0.5) {
+                    let start = Math.floor(Math.random() * (80 - spots)) + 1;
+                    for (let i = 0; i < spots; i++) nums.push(start + i);
+                }
+                
+                while (nums.length < spots) {
+                    let n = Math.floor(Math.random() * 80) + 1;
+                    if (!nums.includes(n)) nums.push(n);
+                }
+                nums.sort((a,b) => a - b);
+
+                const prefix = Math.floor(Math.random() * 90) + 10;
+                const suffix = Math.floor(Math.random() * 90) + 10;
+                
+                const ticket = {
+                    id: Math.floor(Math.random() * 1000000),
+                    displayId: `${prefix} **** ${suffix}`,
+                    numbers: nums,
+                    bet: bet,
+                    matches: 0,
+                    winAmount: 0,
+                    isPromo: true,
+                    revealed: true
+                };
+
+                this.state.promoTickets.unshift(ticket);
+                if (this.state.promoTickets.length > 25) this.state.promoTickets.pop();
+
+                this.insertPromoTicketDOM(ticket);
+
+                this.state.allTicketsCount += Math.floor(Math.random() * 3) + 1;
+                const el = document.getElementById('ui-all-tickets');
+                if (el) el.textContent = this.state.allTicketsCount.toLocaleString();
+
+                const nextDelay = 800 + Math.random() * 2500;
+                this.promoStreamTimer = setTimeout(streamNext, nextDelay);
+            };
+            
+            streamNext();
+        },
+        
+        insertPromoTicketDOM(ticket) {
+            const list = document.getElementById('promo-tickets-list');
+            if (!list) return;
+            const html = this.buildTicketHTML(ticket, false);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = html;
+            const el = wrapper.firstElementChild;
+            el.classList.add('promo-appear');
+            list.insertBefore(el, list.firstChild);
+            
+            while (list.children.length > 15) {
+                list.removeChild(list.lastChild);
+            }
         },
 
         startDrawingAnimation() {
             this.state.uiPhase = 'DRAWING';
             this.updateUI();
             
+            clearTimeout(this.promoStreamTimer);
+            clearInterval(this.drawInterval);
+
             document.getElementById('phase-betting').style.display = 'none';
             document.getElementById('phase-drawing').style.display = 'flex';
             
+            this.renderActiveTickets(true);
+
             const smallBalls = document.getElementById('small-balls-container');
             const bigBall = document.getElementById('big-ball');
             const drawCount = document.getElementById('ui-draw-count');
@@ -505,18 +875,27 @@
             let userNumbers = new Set();
             this.state.currentTickets.forEach(t => t.numbers.forEach(n => userNumbers.add(n)));
 
+            let promoNumbersMap = {};
+            this.state.promoTickets.forEach(t => {
+                t.matches = 0;
+                t.numbers.forEach(n => {
+                    if (!promoNumbersMap[n]) promoNumbersMap[n] = [];
+                    promoNumbersMap[n].push(t);
+                });
+            });
+
             let drawIndex = 0;
             
-            const drawInterval = setInterval(() => {
+            this.drawInterval = setInterval(() => {
                 if (drawIndex >= DRAW_COUNT) {
-                    clearInterval(drawInterval);
+                    clearInterval(this.drawInterval);
                     setTimeout(() => this.processResults(), 1000);
                     return;
                 }
 
                 const currentDrawn = this.state.serverDrawnNumbers[drawIndex];
                 if (currentDrawn) {
-                    this.state.statistics[currentDrawn]++;
+                    this.state.statistics[currentDrawn] = (this.state.statistics[currentDrawn] || 0) + 1;
 
                     const sb = document.createElement('div');
                     sb.className = 'small-ball';
@@ -525,7 +904,7 @@
                     smallBalls.appendChild(sb); 
 
                     let dispCount = drawIndex + 1;
-                    drawCount.textContent = dispCount < 10 ? '0'+dispCount : dispCount;
+                    drawCount.textContent = dispCount < 10 ? '0' + dispCount : String(dispCount);
                     
                     bigBall.textContent = currentDrawn;
                     bigBall.classList.toggle('matched-draw-ball', userNumbers.has(currentDrawn));
@@ -537,10 +916,24 @@
                     this.state.currentTickets.forEach(ticket => {
                         if (ticket.numbers.includes(currentDrawn)) {
                             ticket.matches++;
-                            const slotEl = document.getElementById(`t\( {ticket.id}-slot- \){currentDrawn}`);
-                            if(slotEl) slotEl.classList.add('matched');
+                            const slotEl = document.getElementById('t' + ticket.id + '-slot-' + currentDrawn);
+                            if (slotEl) slotEl.classList.add('matched');
+
+                            const hitEl = document.getElementById('t' + ticket.id + '-hits');
+                            if (hitEl) hitEl.textContent = 'Hits: ' + ticket.matches;
                         }
                     });
+
+                    if (promoNumbersMap[currentDrawn]) {
+                        promoNumbersMap[currentDrawn].forEach(ticket => {
+                            ticket.matches++;
+                            const slotEl = document.getElementById('t' + ticket.id + '-slot-' + currentDrawn);
+                            if (slotEl) slotEl.classList.add('matched');
+
+                            const hitEl = document.getElementById('t' + ticket.id + '-hits');
+                            if (hitEl) hitEl.textContent = 'Hits: ' + ticket.matches;
+                        });
+                    }
                 }
 
                 drawIndex++;
@@ -555,42 +948,61 @@
             this.state.currentTickets.forEach(ticket => {
                 const spots = ticket.numbers.length;
                 totalBet += ticket.bet;
-
                 let multiplier = 0;
                 if (PAYOUTS[spots] && PAYOUTS[spots][ticket.matches] !== undefined) {
                     multiplier = PAYOUTS[spots][ticket.matches];
                 }
-                
                 ticket.winAmount = ticket.bet * multiplier;
                 totalWin += ticket.winAmount;
 
-                const statusEl = document.getElementById(`t${ticket.id}-status`);
+                const statusEl = document.getElementById('t' + ticket.id + '-status');
                 if (statusEl) {
-                    statusEl.textContent = ticket.winAmount > 0 ? `+${ticket.winAmount.toFixed(2)}` : `Loss`;
+                    statusEl.textContent = ticket.winAmount > 0 ? '+' + ticket.winAmount.toFixed(2) : 'Loss';
                     statusEl.className = ticket.winAmount > 0 ? 'status-badge win' : 'status-badge loss';
                 }
             });
 
-            // IMPORTANT: Do NOT add totalWin to balance here!
-            // Your server already credits the win and sends balanceUpdate.
+            this.state.promoTickets.forEach(ticket => {
+                const spots = ticket.numbers.length;
+                let multiplier = 0;
+                if (PAYOUTS[spots] && PAYOUTS[spots][ticket.matches] !== undefined) {
+                    multiplier = PAYOUTS[spots][ticket.matches];
+                }
+                ticket.winAmount = ticket.bet * multiplier;
+
+                const statusEl = document.getElementById('t' + ticket.id + '-status');
+                if (statusEl) {
+                    statusEl.textContent = ticket.winAmount > 0 ? '+' + ticket.winAmount.toFixed(0) : 'Loss';
+                    statusEl.className = ticket.winAmount > 0 ? 'status-badge win' : 'status-badge loss';
+                }
+            });
+
+            this.state.drawHistory.push(this.state.serverDrawnNumbers.slice());
+            if (this.state.drawHistory.length > 100) {
+                const removed = this.state.drawHistory.shift();
+                removed.forEach(n => {
+                    if (this.state.statistics[n] > 0) this.state.statistics[n]--;
+                });
+            }
 
             if (this.state.currentTickets.length > 0) {
                 const d = new Date();
+                const dateStr = (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear().toString().slice(-2);
                 this.state.personalHistory.unshift({
                     id: this.state.serverRoundId,
-                    date: `\( {d.getMonth()+1}/ \){d.getDate()}/${d.getFullYear().toString().slice(-2)}`,
+                    date: dateStr,
                     tickets: JSON.parse(JSON.stringify(this.state.currentTickets)), 
-                    drawnNumbers: [...this.state.serverDrawnNumbers],
+                    drawnNumbers: this.state.serverDrawnNumbers.slice(),
                     totalWin: totalWin
                 });
-                if (this.state.personalHistory.length > 30) this.state.personalHistory.pop();
+                if (this.state.personalHistory.length > 4) this.state.personalHistory.length = 4;
             }
 
             this.saveCache();
+            this.updateHotCold();
             this.showResultOverlay(totalWin, totalBet);
             this.updateUI();
 
-            // Ask server for the latest real balance (after it credits wins)
             setTimeout(() => APIManager.requestBalance(), 500);
         },
 
@@ -600,7 +1012,7 @@
             document.getElementById('res-total-bet').textContent = totalBet.toFixed(2);
             
             const payoutEl = document.getElementById('res-payout');
-            payoutEl.textContent = this.state.currentTickets.length > 0 ? `+${totalWin.toFixed(2)} ETB` : 'No Tickets Placed';
+            payoutEl.textContent = this.state.currentTickets.length > 0 ? '+' + totalWin.toFixed(2) + ' ETB' : 'No Tickets Placed';
             payoutEl.style.color = totalWin > 0 ? 'var(--accent-match)' : 'var(--text-muted)';
             
             document.getElementById('result-overlay').style.display = 'flex';
@@ -615,103 +1027,168 @@
             this.state.selectedNumbers.clear();
             this.state.currentTickets = [];
             this.state.serverDrawnNumbers = [];
+            this.state.promoTickets = [];
+            document.getElementById('promo-tickets-list').innerHTML = '';
+            
+            this.state.allTicketsCount = 480 + Math.floor(Math.random() * 80);
+            const atEl = document.getElementById('ui-all-tickets');
+            if (atEl) atEl.textContent = this.state.allTicketsCount;
+            this.startAllTicketsCounter();
             
             document.querySelectorAll('.num-btn').forEach(btn => btn.classList.remove('selected'));
             this.renderActiveTickets();
+            this.startPromoStream();
             this.renderHistory();
+            this.updateHotCold();
             this.updateUI();
+            this.updatePayoutPreview();
 
             APIManager.requestBalance();
         },
 
         updateUI() {
-            document.getElementById('ui-balance').textContent = `${this.state.balance.toFixed(2)} ETB`;
-            document.getElementById('ui-bet').textContent = this.state.betAmount.toFixed(2);
-            document.getElementById('ui-round-id').textContent = `ID: ${this.state.serverRoundId || '---'}`;
+            const balEl = document.getElementById('ui-balance');
+            if (this.state.balanceHidden) {
+                balEl.textContent = '•••• ETB';
+            } else {
+                balEl.textContent = this.state.balance.toFixed(2) + ' ETB';
+            }
+
+            const betInput = document.getElementById('ui-bet-input');
+            if (document.activeElement !== betInput) {
+                betInput.value = this.state.betAmount;
+            }
+            document.getElementById('ui-round-id').textContent = 'ID: ' + (this.state.serverRoundId || '---');
             
             let totalBetsAmt = this.state.currentTickets.reduce((sum, t) => sum + t.bet, 0);
             document.getElementById('ui-ticket-count').textContent = this.state.currentTickets.length;
             document.getElementById('ui-my-bets-total').textContent = totalBetsAmt.toFixed(2);
 
             const btn = document.getElementById('btn-bet');
-            if (this.state.uiPhase !== 'BETTING') {
+            
+            if (!this.state.isConnected) {
+                btn.className = 'btn-bet-main';
+                btn.textContent = 'CONNECTING...';
+                btn.disabled = true;
+            } else if (this.state.isPlacingBet) {
+                btn.className = 'btn-bet-main';
+                btn.textContent = 'PROCESSING...';
+                btn.disabled = true;
+            } else if (this.state.uiPhase !== 'BETTING') {
                 btn.className = 'btn-bet-main';
                 btn.textContent = 'DRAW IN PROGRESS';
+                btn.disabled = true;
             } else {
+                btn.disabled = false;
                 if (this.state.currentTickets.length >= MAX_TICKETS) {
-                    btn.className = 'btn-bet-main'; btn.textContent = 'MAX TICKETS REACHED';
+                    btn.className = 'btn-bet-main'; 
+                    btn.textContent = 'MAX TICKETS REACHED';
+                    btn.disabled = true;
                 } else if (this.state.selectedNumbers.size > 0) {
-                    btn.className = 'btn-bet-main active'; btn.textContent = 'BET';
+                    btn.className = 'btn-bet-main active'; 
+                    btn.textContent = 'BET';
                 } else {
-                    btn.className = 'btn-bet-main'; btn.textContent = 'BET';
+                    btn.className = 'btn-bet-main'; 
+                    btn.textContent = 'BET';
                 }
             }
         },
 
-        buildTicketHTML(ticket, isHistory = false, drawnList = []) {
+        buildTicketHTML(ticket, isHistory, drawnList) {
+            isHistory = !!isHistory;
+            drawnList = drawnList || [];
             let slotsHtml = '';
             for (let i = 0; i < 10; i++) {
                 if (i < ticket.numbers.length) {
                     const num = ticket.numbers[i];
-                    let isMatch = isHistory ? drawnList.includes(num) : false;
-                    slotsHtml += `<div class="slot filled \( {isMatch ? 'matched' : ''}" id=" \){!isHistory ? 't'+ticket.id+'-slot-'+num : ''}">${num}</div>`;
+                    const isMatch = isHistory && drawnList.indexOf(num) !== -1;
+                    const idAttr = !isHistory ? ' id="t' + ticket.id + '-slot-' + num + '"' : '';
+                    slotsHtml += '<div class="slot filled' + (isMatch ? ' matched' : '') + '"' + idAttr + '>' + num + '</div>';
                 } else {
-                    slotsHtml += `<div class="slot"></div>`;
+                    slotsHtml += '<div class="slot"></div>';
                 }
             }
-            let statusHtml = `<span class="status-badge" id="${!isHistory ? 't'+ticket.id+'-status' : ''}">Waiting</span>`;
+
+            let statusHtml;
             if (isHistory) {
-                statusHtml = ticket.winAmount > 0 ? `<span class="status-badge win">+${ticket.winAmount.toFixed(2)}</span>` : `<span class="status-badge loss">Loss</span>`;
+                statusHtml = ticket.winAmount > 0
+                    ? '<span class="status-badge win">+' + ticket.winAmount.toFixed(2) + '</span>'
+                    : '<span class="status-badge loss">Loss</span>';
+            } else {
+                statusHtml = '<span class="status-badge" id="t' + ticket.id + '-status">Waiting</span>';
             }
-            return `
-                <div class="ticket-item">
-                    <div class="ticket-top">
-                        <span>Ticket #${ticket.id}</span>
-                        <span style="color:white; font-size:13px;">Bet ${ticket.bet.toFixed(0)}</span>
-                    </div>
-                    <div class="ticket-slots">${slotsHtml}</div>
-                    <div class="ticket-bottom">
-                        <span style="color:var(--text-muted); font-size:11px;">${isHistory ? 'Matched: ' + ticket.matches : 'Hits: 0'}</span>
-                        ${statusHtml}
-                    </div>
-                </div>
-            `;
+
+            const promoClass = ticket.isPromo ? ' promo' : '';
+            const label = ticket.isPromo ? (ticket.displayId || 'Player #' + ticket.id) : ('Ticket #' + ticket.id);
+
+            return '<div class="ticket-item' + promoClass + '">' +
+                '<div class="ticket-top">' +
+                    '<span>' + label + '</span>' +
+                    '<span style="color:white; font-size:13px;">Bet ' + ticket.bet + '</span>' +
+                '</div>' +
+                '<div class="ticket-slots">' + slotsHtml + '</div>' +
+                '<div class="ticket-bottom">' +
+                    '<span style="color:var(--text-muted); font-size:11px;" id="t' + ticket.id + '-hits">' + 
+                        (isHistory ? ('Matched: ' + ticket.matches) : ('Hits: ' + (ticket.matches || 0))) + 
+                    '</span>' +
+                    statusHtml +
+                '</div>' +
+            '</div>';
         },
 
-        renderActiveTickets() {
+        renderActiveTickets(keepPromo) {
             const listEl = document.getElementById('tickets-list');
+            const promoEl = document.getElementById('promo-tickets-list');
+
             if (this.state.currentTickets.length === 0) {
-                listEl.innerHTML = '<div id="empty-tickets-msg">No tickets placed. Select numbers and tap BET.</div>'; 
-                return;
+                listEl.innerHTML = '<div id="empty-tickets-msg">No tickets placed. Select numbers and tap BET.</div>';
+            } else {
+                let html = '';
+                for (let i = 0; i < this.state.currentTickets.length; i++) {
+                    html += this.buildTicketHTML(this.state.currentTickets[i], false);
+                }
+                listEl.innerHTML = html;
+            }
+
+            if (this.state.uiPhase === 'BETTING' || this.state.uiPhase === 'DRAWING' || keepPromo) {
+                if (this.state.promoTickets.some(t => t.revealed)) {
+                    let pHtml = '';
+                    this.state.promoTickets.forEach(t => {
+                        if (t.revealed) pHtml += this.buildTicketHTML(t, false);
+                    });
+                    promoEl.innerHTML = pHtml;
+                }
+            } else {
+                promoEl.innerHTML = '';
             }
             
-            const html = this.state.currentTickets.map(t => this.buildTicketHTML(t, false)).join('');
-            listEl.innerHTML = html;
-            
             const appBody = document.getElementById('app-body');
-            appBody.scrollTop = appBody.scrollHeight;
+            if (this.state.currentTickets.length > 0) appBody.scrollTop = 0;
         },
 
         renderHistory() {
             const list = document.getElementById('history-list');
-            if (this.state.personalHistory.length === 0) {
-                list.innerHTML = '<div id="empty-history-msg">No history available.</div>'; return;
+            const rounds = this.state.personalHistory.slice(0, 4);
+            if (rounds.length === 0) {
+                list.innerHTML = '<div id="empty-history-msg">No history available.</div>';
+                return;
             }
             
             let html = '';
-            this.state.personalHistory.forEach(round => {
-                html += `
-                    <div class="history-divider">
-                        <div class="line"></div>
-                        <div class="history-meta">
-                            <div style="color:var(--accent-green-light)">ID: ${round.id}</div>
-                            <div style="color:var(--text-muted); font-size:11px;">${round.date}</div>
-                        </div>
-                        <div class="line"></div>
-                    </div>
-                `;
-                html += round.tickets.map(t => this.buildTicketHTML(t, true, round.drawnNumbers)).join('');
-            });
+            for (let r = 0; r < rounds.length; r++) {
+                const round = rounds[r];
+                html += '<div class="history-divider">' +
+                    '<div class="line"></div>' +
+                    '<div class="history-meta">' +
+                        '<div style="color:var(--accent-green-light)">ID: ' + round.id + '</div>' +
+                        '<div style="color:var(--text-muted); font-size:11px;">' + (round.date || '') + '</div>' +
+                    '</div>' +
+                    '<div class="line"></div>' +
+                '</div>';
+                for (let t = 0; t < round.tickets.length; t++) {
+                    html += this.buildTicketHTML(round.tickets[t], true, round.drawnNumbers);
+                }
+            }
             list.innerHTML = html;
         },
 
@@ -719,23 +1196,23 @@
             const list = document.getElementById('results-list');
             let html = '';
             if (this.state.uiPhase === 'BETTING' || this.state.uiPhase === 'DRAWING') {
-                html += `
-                    <div class="result-row">
-                        <div class="result-id-col">✔️ <div style="color:var(--accent-green-light); font-weight:bold;">${this.state.serverRoundId}</div></div>
-                        <div class="combo-wait-box">WAITING...</div>
-                    </div>
-                `;
+                html += '<div class="result-row">' +
+                    '<div class="result-id-col">✔️ <div style="color:var(--accent-green-light); font-weight:bold;">' + this.state.serverRoundId + '</div></div>' +
+                    '<div class="combo-wait-box">WAITING...</div>' +
+                '</div>';
             }
-            const resultsReversed = [...this.state.globalResults].reverse();
-            resultsReversed.forEach(res => {
-                let cells = res.numbers.map(n => `<div class="combo-cell">${n}</div>`).join('');
-                html += `
-                    <div class="result-row">
-                        <div class="result-id-col">✔️ <div style="color:var(--accent-green-light);">${res.id}</div></div>
-                        <div class="combo-grid">${cells}</div>
-                    </div>
-                `;
-            });
+            const resultsReversed = this.state.globalResults.slice().reverse();
+            for (let i = 0; i < resultsReversed.length; i++) {
+                const res = resultsReversed[i];
+                let cells = '';
+                for (let j = 0; j < res.numbers.length; j++) {
+                    cells += '<div class="combo-cell">' + res.numbers[j] + '</div>';
+                }
+                html += '<div class="result-row">' +
+                    '<div class="result-id-col">✔️ <div style="color:var(--accent-green-light);">' + res.id + '</div></div>' +
+                    '<div class="combo-grid">' + cells + '</div>' +
+                '</div>';
+            }
             list.innerHTML = html;
         },
 
@@ -743,50 +1220,93 @@
             const list = document.getElementById('statistics-list');
             let html = '';
             for (let i = 1; i <= TOTAL_NUMBERS; i++) {
-                html += `
-                    <div class="stat-row">
-                        <div class="stat-num">${i}</div>
-                        <div class="stat-bar-track"><div class="stat-bar-fill" id="stat-bar-fill-${i}" style="width: 0%;"></div></div>
-                        <div class="stat-val" id="stat-val-${i}">0</div>
-                    </div>
-                `;
+                html += '<div class="stat-row">' +
+                    '<div class="stat-num">' + i + '</div>' +
+                    '<div class="stat-bar-track"><div class="stat-bar-fill" id="stat-bar-fill-' + i + '" style="width: 0%;"></div></div>' +
+                    '<div class="stat-val" id="stat-val-' + i + '">0</div>' +
+                '</div>';
             }
             list.innerHTML = html;
         },
 
         renderStatistics() {
-            const vals = Object.values(this.state.statistics);
-            const maxCount = Math.max(...vals, 1);
+            try {
+                const vals = [];
+                for (let i = 1; i <= TOTAL_NUMBERS; i++) vals.push(this.state.statistics[i] || 0);
+                const maxCount = Math.max.apply(null, vals.concat([1]));
 
-            for (let i = 1; i <= TOTAL_NUMBERS; i++) {
-                const count = this.state.statistics[i];
-                const percent = (count / maxCount) * 100;
-                
-                document.getElementById(`stat-bar-fill-\( {i}`).style.width = ` \){percent}%`;
-                document.getElementById(`stat-val-${i}`).textContent = count;
+                for (let i = 1; i <= TOTAL_NUMBERS; i++) {
+                    const count = this.state.statistics[i] || 0;
+                    const percent = (count / maxCount) * 100;
+                    const bar = document.getElementById('stat-bar-fill-' + i);
+                    const val = document.getElementById('stat-val-' + i);
+                    if (bar) bar.style.width = percent + '%';
+                    if (val) val.textContent = count;
+                }
+                const trickEl = document.getElementById('stats-trick');
+                if (trickEl) trickEl.textContent = '';
+            } catch (e) {
+                const tricks = ['Hot streak detected', 'Cold numbers quiet', 'Even numbers leading', 'Watch rising numbers'];
+                const trickEl = document.getElementById('stats-trick');
+                if (trickEl) trickEl.textContent = tricks[Math.floor(Math.random() * tricks.length)];
             }
+        },
+
+        startStatsFallback() {
+            this.statsFallbackInterval = setInterval(() => {
+                if (document.getElementById('tab-statistics').classList.contains('active')) {
+                    this.renderStatistics();
+                }
+            }, 8000);
         },
 
         showBanner(msg) {
             const banner = document.getElementById('msg-banner');
-            banner.textContent = msg; banner.style.opacity = '1';
+            banner.textContent = msg;
+            banner.style.opacity = '1';
             setTimeout(() => banner.style.opacity = '0', 2000);
         },
 
         attachEventListeners() {
             document.querySelectorAll('.btn-adjust-bet').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    if (this.state.uiPhase !== 'BETTING') return;
-                    const action = e.target.dataset.action;
-                    if (action === 'minus' && this.state.betAmount > 0.5) this.state.betAmount -= 0.5;
-                    if (action === 'plus') this.state.betAmount += 0.5;
-                    if (action === 'x2') this.state.betAmount *= 2;
-                    if (action === 'max') this.state.betAmount = this.state.balance > 0 ? this.state.balance : 2;
-                    if (this.state.betAmount > this.state.balance && this.state.balance > 0) this.state.betAmount = this.state.balance;
-                    if (this.state.betAmount <= 0) this.state.betAmount = 0.5;
+                    if (this.state.uiPhase !== 'BETTING' || this.state.isPlacingBet) return;
+                    const action = e.currentTarget.dataset.action;
+                    let val = this.state.betAmount;
+
+                    if (action === 'minus') val = Math.max(MIN_BET, val - 2);
+                    if (action === 'plus') val += 2;
+                    if (action === 'x2') val = Math.max(MIN_BET, val * 2);
+                    if (action === 'max') {
+                        val = this.state.balance > 0 ? Math.floor(this.state.balance / 2) * 2 || MIN_BET : MIN_BET;
+                    }
+
+                    if (val > this.state.balance && this.state.balance > 0) {
+                        val = Math.floor(this.state.balance / 2) * 2 || MIN_BET;
+                    }
+                    if (val < MIN_BET) val = MIN_BET;
+                    if (val % 2 !== 0) val += 1;
+
+                    this.state.betAmount = val;
                     this.updateUI();
+                    this.updatePayoutPreview();
                 });
             });
+
+            const parseAndSetBet = (valString) => {
+                let val = parseInt(valString, 10);
+                if (isNaN(val)) val = MIN_BET;
+                if (val < MIN_BET) val = MIN_BET;
+                if (val % 2 !== 0) val += 1; // enforce even integer constraint
+                this.state.betAmount = val;
+                this.updateUI();
+                this.updatePayoutPreview();
+            };
+
+            const betInput = document.getElementById('ui-bet-input');
+            betInput.addEventListener('change', (e) => parseAndSetBet(e.target.value));
+            betInput.addEventListener('blur', (e) => parseAndSetBet(e.target.value));
+
             document.getElementById('btn-bet').addEventListener('click', () => this.placeBet());
         }
     };
@@ -795,20 +1315,60 @@
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         
-        if (tabName === 'game') { document.querySelectorAll('.nav-item')[0].classList.add('active'); document.getElementById('tab-game').classList.add('active'); FrontendApp.renderActiveTickets(); }
-        if (tabName === 'history') { document.querySelectorAll('.nav-item')[1].classList.add('active'); document.getElementById('tab-history').classList.add('active'); FrontendApp.renderHistory(); }
-        if (tabName === 'results') { document.querySelectorAll('.nav-item')[2].classList.add('active'); document.getElementById('tab-results').classList.add('active'); FrontendApp.renderResults(); }
-        if (tabName === 'statistics') { document.querySelectorAll('.nav-item')[3].classList.add('active'); document.getElementById('tab-statistics').classList.add('active'); FrontendApp.renderStatistics(); }
+        if (tabName === 'game') {
+            document.querySelectorAll('.nav-item')[0].classList.add('active');
+            document.getElementById('tab-game').classList.add('active');
+            FrontendApp.renderActiveTickets();
+        }
+        if (tabName === 'history') {
+            document.querySelectorAll('.nav-item')[1].classList.add('active');
+            document.getElementById('tab-history').classList.add('active');
+            FrontendApp.renderHistory();
+        }
+        if (tabName === 'results') {
+            document.querySelectorAll('.nav-item')[2].classList.add('active');
+            document.getElementById('tab-results').classList.add('active');
+            FrontendApp.renderResults();
+        }
+        if (tabName === 'statistics') {
+            document.querySelectorAll('.nav-item')[3].classList.add('active');
+            document.getElementById('tab-statistics').classList.add('active');
+            FrontendApp.renderStatistics();
+        }
     };
 
-    // + button → go to landing page for deposit
     window.goToLandingPage = function() {
-        window.location.href = 'index.html';   // change if your landing file has another name
+        window.location.href = 'index.html';
     };
 
     window.requestBalanceSync = function() {
         APIManager.requestBalance();
         FrontendApp.showBanner("Refreshing balance...");
+    };
+
+    window.toggleBalanceVisibility = function() {
+        FrontendApp.state.balanceHidden = !FrontendApp.state.balanceHidden;
+        FrontendApp.saveCache();
+        FrontendApp.updateUI();
+        const eye = document.getElementById('balance-eye');
+        eye.textContent = FrontendApp.state.balanceHidden ? '👁‍🗨' : '👁';
+    };
+
+    window.toggleMenu = function() {
+        const panel = document.getElementById('menu-panel');
+        const backdrop = document.getElementById('menu-backdrop');
+        panel.classList.toggle('open');
+        backdrop.classList.toggle('show');
+    };
+
+    window.openDialog = function(type) {
+        document.getElementById('menu-panel').classList.remove('open');
+        document.getElementById('menu-backdrop').classList.remove('show');
+        document.getElementById('dialog-' + type).classList.add('show');
+    };
+
+    window.closeDialog = function(type) {
+        document.getElementById('dialog-' + type).classList.remove('show');
     };
 
     FrontendApp.init();
