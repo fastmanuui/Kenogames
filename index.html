@@ -99,7 +99,7 @@
     </style>
 </head>
 <body>
-<div class="phone-viewport-container">
+<div class="phone-viewport-container" id="main-app">
     <div class="native-system-header">
         <div class="native-title-group" onclick="switchPanel('home')">
             <span>✕</span>
@@ -165,7 +165,7 @@
         <div class="identity-strip-panel">
             <div class="identity-profile-info">
                 <div class="identity-avatar-box">💼</div>
-                <div class="identity-meta"><h4 id="user-display-name">User</h4><p id="user-display-phone">+251900000000</p></div>
+                <div class="identity-meta"><h4 id="user-display-name">User</h4><p id="user-display-phone">Not set</p></div>
             </div>
             <div class="navigation-control-rack">
                 <button class="nav-rack-btn" onclick="switchPanel('home')">←</button>
@@ -185,7 +185,7 @@
         <div class="identity-strip-panel">
             <div class="identity-profile-info">
                 <div class="identity-avatar-box">💼</div>
-                <div class="identity-meta"><h4 class="sync-name">User</h4><p class="sync-phone">+251900000000</p></div>
+                <div class="identity-meta"><h4 class="sync-name">User</h4><p class="sync-phone">Not set</p></div>
             </div>
             <div class="navigation-control-rack">
                 <button class="nav-rack-btn" onclick="switchPanel('home')">←</button>
@@ -260,7 +260,7 @@
         <div class="identity-strip-panel" id="confirm-user-header" style="display:none;">
             <div class="identity-profile-info">
                 <div class="identity-avatar-box">💼</div>
-                <div class="identity-meta"><h4 class="sync-name">User</h4><p class="sync-phone">+251900000000</p></div>
+                <div class="identity-meta"><h4 class="sync-name">User</h4><p class="sync-phone">Not set</p></div>
             </div>
             <div class="navigation-control-rack">
                 <button class="nav-rack-btn" onclick="handleBackKeyPress()">←</button>
@@ -308,7 +308,7 @@
     let currentUser = {
         id: 'guest_user',
         name: 'Guest Player',
-        phone: '+251900000000',
+        phone: '',
         balance: 0.00
     };
 
@@ -351,33 +351,34 @@
             if (user) {
                 currentUser.id = `tg_${user.id}`;
                 currentUser.name = user.first_name + (user.last_name ? ` ${user.last_name}` : '');
-                currentUser.phone = '';   // Do not invent a phone number
+                currentUser.phone = '';
             }
         }
+
         document.getElementById('user-display-name').textContent = currentUser.name;
-        document.getElementById('user-display-phone').textContent = currentUser.phone;
+        document.getElementById('user-display-phone').textContent = currentUser.phone || 'Not set';
         document.querySelectorAll('.sync-name').forEach(el => el.textContent = currentUser.name);
-        document.querySelectorAll('.sync-phone').forEach(el => el.textContent = currentUser.phone);
+        document.querySelectorAll('.sync-phone').forEach(el => el.textContent = currentUser.phone || 'Not set');
         document.getElementById('confirm-player-id').textContent = currentUser.id;
-        syncUserToSupabase();
+
+        syncUserToSupabase().then(() => {
+            checkPhoneAndBlock();
+        });
     }
 
     async function syncUserToSupabase() {
         try {
-        // First check if user already exists
             const { data: existing } = await supabaseClient
                 .from('users')
                 .select('phone')
                 .eq('user_id', currentUser.id)
                 .maybeSingle();
 
-        // Only update name, never overwrite a real phone number
             const updateData = {
                 user_id: currentUser.id,
                 name: currentUser.name
             };
 
-        // Only set phone if the user doesn't have a real phone yet
             if (!existing || !existing.phone || !existing.phone.startsWith('+')) {
                 updateData.phone = currentUser.phone || null;
             }
@@ -389,6 +390,33 @@
                 });
         } catch (err) {
             console.error('Failed to sync user profile:', err);
+        }
+    }
+
+    // ========== FORCE PHONE CHECK ==========
+    async function checkPhoneAndBlock() {
+        try {
+            const { data } = await supabaseClient
+                .from('users')
+                .select('phone')
+                .eq('user_id', currentUser.id)
+                .maybeSingle();
+
+            if (!data || !data.phone || !data.phone.startsWith('+')) {
+                document.body.innerHTML = `
+                    <div style="background:#0a0b0d; color:white; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:30px; font-family:sans-serif;">
+                        <h2 style="color:#d32323; margin-bottom:15px;">Phone Required</h2>
+                        <p style="color:#aaa; margin-bottom:25px; line-height:1.5;">
+                            You must share your phone number with the bot before you can play.
+                        </p>
+                        <p style="color:#7e8494; font-size:14px;">
+                            Go back to the bot and press <b>Start</b>, then share your phone number.
+                        </p>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            console.error(err);
         }
     }
 
@@ -436,7 +464,9 @@
 
     function updateBalanceDisplay() {
         const valSpan = document.getElementById('header-balance-val');
-        valSpan.textContent = isBalanceHidden ? '*** ETB' : currentUser.balance.toFixed(2) + ' ETB';
+        if (valSpan) {
+            valSpan.textContent = isBalanceHidden ? '*** ETB' : currentUser.balance.toFixed(2) + ' ETB';
+        }
     }
 
     function toggleBalanceObscure() {
@@ -605,7 +635,6 @@
         socket.emit('redeemCoupon', { userId: currentUser.id, code: code });
     }
 
-    // FIXED: Open Keno correctly on GitHub Pages
     function launchGame() {
         const userId = encodeURIComponent(currentUser.id);
         window.location.href = 'keno.html?userId=' + userId;
@@ -620,4 +649,4 @@
     }
 </script>
 </body>
-                </html>
+    </html>
