@@ -353,6 +353,7 @@
                 currentUser.name = user.first_name + (user.last_name ? ` ${user.last_name}` : '');
                 currentUser.phone = '';   // Do not invent a phone number
             }
+        }
         document.getElementById('user-display-name').textContent = currentUser.name;
         document.getElementById('user-display-phone').textContent = currentUser.phone;
         document.querySelectorAll('.sync-name').forEach(el => el.textContent = currentUser.name);
