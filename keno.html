@@ -196,11 +196,11 @@
 
     <div class="top-bar">
         <span onclick="goToLandingPage()" style="cursor:pointer; font-size:18px;">✕</span>
-        <span style="font-weight: bold;">Speed Games</span>
+        <span style="font-weight: bold;">Fast Games</span>
         <span style="width:18px;"></span>
     </div>
     <div class="header-2">
-        <div class="bg-logo">S</div>
+        <div class="bg-logo">F</div>
         <div class="balance-pill">
             <span onclick="requestBalanceSync()" style="cursor:pointer;">↻</span>
             <span id="ui-balance">0.00 ETB</span>
@@ -751,6 +751,8 @@
             if (target < 5000) target = 5000 + Math.floor(Math.random() * 3000);
 
             this.allTicketsInterval = setInterval(() => {
+                // Pause counter if offline or not connected to the server
+                if (!navigator.onLine || !this.state.isConnected) return;
                 if (this.state.uiPhase !== 'BETTING') return;
 
                 const current = this.state.allTicketsCount;
@@ -773,6 +775,11 @@
             clearTimeout(this.promoStreamTimer);
             
             const streamNext = () => {
+                // Pause fake tickets if offline or disconnected to avoid exposing the promo logic
+                if (!navigator.onLine || !this.state.isConnected) {
+                    this.promoStreamTimer = setTimeout(streamNext, 2000);
+                    return;
+                }
                 if (this.state.uiPhase !== 'BETTING') return;
 
                 const r = Math.random();
@@ -808,10 +815,12 @@
                 nums.sort((a,b) => a - b);
 
                 const prefix = Math.floor(Math.random() * 90) + 10;
-                const suffix = Math.floor(Math.random() * 90) + 10;
+                // Ensures suffix and ticketId ends in 0 or 5 
+                const suffix = (Math.floor(Math.random() * 18) + 2) * 5; 
+                const ticketId = Math.floor(Math.random() * 200000) * 5;
                 
                 const ticket = {
-                    id: Math.floor(Math.random() * 1000000),
+                    id: ticketId,
                     displayId: `${prefix} **** ${suffix}`,
                     numbers: nums,
                     bet: bet,
