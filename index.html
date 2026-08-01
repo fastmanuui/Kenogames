@@ -349,11 +349,10 @@
             tg.ready();
             const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
             if (user) {
-                currentUser.id = 'tg_' + user.id;
-                currentUser.name = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-                currentUser.phone = user.username ? '@' + user.username : '+251' + String(user.id).slice(-9);
+                currentUser.id = `tg_${user.id}`;
+                currentUser.name = user.first_name + (user.last_name ? ` ${user.last_name}` : '');
+                currentUser.phone = '';   // Do not invent a phone number
             }
-        }
         document.getElementById('user-display-name').textContent = currentUser.name;
         document.getElementById('user-display-phone').textContent = currentUser.phone;
         document.querySelectorAll('.sync-name').forEach(el => el.textContent = currentUser.name);
@@ -364,13 +363,31 @@
 
     async function syncUserToSupabase() {
         try {
-            await supabaseClient.from('users').upsert({
+        // First check if user already exists
+            const { data: existing } = await supabaseClient
+                .from('users')
+                .select('phone')
+                .eq('user_id', currentUser.id)
+                .maybeSingle();
+
+        // Only update name, never overwrite a real phone number
+            const updateData = {
                 user_id: currentUser.id,
-                name: currentUser.name,
-                phone: currentUser.phone
-            }, { onConflict: 'user_id', ignoreDuplicates: true });
+                name: currentUser.name
+            };
+
+        // Only set phone if the user doesn't have a real phone yet
+            if (!existing || !existing.phone || !existing.phone.startsWith('+')) {
+                updateData.phone = currentUser.phone || null;
+            }
+
+            await supabaseClient
+                .from('users')
+                .upsert(updateData, {
+                    onConflict: 'user_id'
+                });
         } catch (err) {
-            console.error('Failed to sync user:', err);
+            console.error('Failed to sync user profile:', err);
         }
     }
 
