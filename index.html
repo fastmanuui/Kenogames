@@ -142,6 +142,16 @@
         <div class="catalog-section-label">🎮 Featured Games</div>
         <div class="catalog-section-desc">Explore our handpicked selection of top-rated games.</div>
         <div class="game-showcase-grid">
+            
+            <div class="game-item-card" onclick="launchHitCoins()">
+                <div class="badge-star">★</div>
+                <div class="badge-secure">✔</div>
+                <div class="card-thumbnail" style="background-image: linear-gradient(to top, #000 0%, transparent 60%), url('https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=300&auto=format&fit=crop&q=80');"></div>
+                <div class="card-metadata-shade">
+                    <div class="title-label" style="color: #ffb703;">Hit Coins 2</div>
+                    <div class="studio-label">FAST GAMES</div>
+                </div>
+            </div>
             <div class="game-item-card" onclick="alert('Aviator is unlocking in next update!')">
                 <div class="badge-star">★</div>
                 <div class="card-thumbnail" style="background-image: linear-gradient(to top, #000 0%, transparent 60%), url('https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=150&auto=format&fit=crop&q=60');"></div>
@@ -638,6 +648,12 @@
     function launchGame() {
         const userId = encodeURIComponent(currentUser.id);
         window.location.href = 'keno.html?userId=' + userId;
+    }
+    
+    function launchHitCoins() {
+        const userId = encodeURIComponent(currentUser.id);
+        window.location.href =
+        'https://fastmanuui.github.io/Hitcons/?userId=' + userId;
     }
 
     function copyTextToClipboard(text) {
